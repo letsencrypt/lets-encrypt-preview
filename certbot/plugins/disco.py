@@ -33,6 +33,7 @@ class PluginEntryPoint(object):
         "certbot-dns-google",
         "certbot-dns-luadns",
         "certbot-dns-nsone",
+        "certbot-dns-rackspace",
         "certbot-dns-rfc2136",
         "certbot-dns-route53",
         "certbot-nginx",

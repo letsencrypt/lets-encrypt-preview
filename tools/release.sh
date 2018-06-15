@@ -46,7 +46,7 @@ PORT=${PORT:-1234}
 
 # subpackages to be released (the way developers think about them)
 SUBPKGS_IN_AUTO_NO_CERTBOT="acme certbot-apache certbot-nginx"
-SUBPKGS_NOT_IN_AUTO="certbot-dns-cloudflare certbot-dns-cloudxns certbot-dns-digitalocean certbot-dns-dnsimple certbot-dns-dnsmadeeasy certbot-dns-google certbot-dns-luadns certbot-dns-nsone certbot-dns-rfc2136 certbot-dns-route53"
+SUBPKGS_NOT_IN_AUTO="certbot-dns-cloudflare certbot-dns-cloudxns certbot-dns-digitalocean certbot-dns-dnsimple certbot-dns-dnsmadeeasy certbot-dns-google certbot-dns-luadns certbot-dns-nsone certbot-dns-rackspace certbot-dns-rfc2136 certbot-dns-route53"
 
 # subpackages to be released (the way the script thinks about them)
 SUBPKGS_IN_AUTO="certbot $SUBPKGS_IN_AUTO_NO_CERTBOT"

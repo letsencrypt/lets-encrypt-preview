@@ -22,6 +22,7 @@ fi
   -e certbot-dns-google \
   -e certbot-dns-luadns \
   -e certbot-dns-nsone \
+  -e certbot-dns-rackspace \
   -e certbot-dns-rfc2136 \
   -e certbot-dns-route53 \
   -e certbot-nginx \
