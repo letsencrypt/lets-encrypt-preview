@@ -27,6 +27,7 @@ fi
   -e certbot-dns-rfc2136 \
   -e certbot-dns-route53 \
   -e certbot-dns-sakuracloud \
+  -e certbot-dns-dnspod \
   -e certbot-nginx \
   -e certbot-postfix \
   -e letshelp-certbot \

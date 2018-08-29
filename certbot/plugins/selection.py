@@ -166,7 +166,7 @@ def choose_plugin(prepared, question):
 noninstaller_plugins = ["webroot", "manual", "standalone", "dns-cloudflare", "dns-cloudxns",
                         "dns-digitalocean", "dns-dnsimple", "dns-dnsmadeeasy", "dns-gehirn",
                         "dns-google", "dns-linode", "dns-luadns", "dns-nsone", "dns-ovh",
-                        "dns-rfc2136", "dns-route53", "dns-sakuracloud"]
+                        "dns-rfc2136", "dns-route53", "dns-sakuracloud", "dns-dnspod"]
 
 def record_chosen_plugins(config, plugins, auth, inst):
     "Update the config entries to reflect the plugins we actually selected."
@@ -307,6 +307,8 @@ def cli_plugin_requests(config):  # pylint: disable=too-many-branches
         req_auth = set_configurator(req_auth, "dns-route53")
     if config.dns_sakuracloud:
         req_auth = set_configurator(req_auth, "dns-sakuracloud")
+    if config.dns_dnspod:
+        req_auth = set_configurator(req_auth, "dns-dnspod")
     logger.debug("Requested authenticator %s and installer %s", req_auth, req_inst)
     return req_auth, req_inst
 

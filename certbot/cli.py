@@ -1450,6 +1450,10 @@ def _plugins_parsing(helpful, plugins):
                 default=flag_default("dns_sakuracloud"),
                 help=("Obtain certificates using a DNS TXT record "
                      "(if you are using Sakura Cloud for DNS)."))
+    helpful.add(["plugins", "certonly"], "--dns-dnspod", action="store_true",
+                default=flag_default("dns_dnspod"),
+                help=("Obtain certificates using a DNS TXT record "
+                     "(if you are using Dnspod for DNS)."))
 
     # things should not be reorder past/pre this comment:
     # plugins_group should be displayed in --help before plugin

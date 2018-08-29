@@ -1,0 +1,12 @@
+# readthedocs.org gives no way to change the install command to "pip
+# install -e .[docs]" (that would in turn install documentation
+# dependencies), but it allows to specify a requirements.txt file at
+# https://readthedocs.org/dashboard/letsencrypt/advanced/ (c.f. #259)
+
+# Although ReadTheDocs certainly doesn't need to install the project
+# in --editable mode (-e), just "pip install .[docs]" does not work as
+# expected and "pip install -e .[docs]" must be used instead
+
+-e acme
+-e .
+-e certbot-dns-dnspod[docs]
