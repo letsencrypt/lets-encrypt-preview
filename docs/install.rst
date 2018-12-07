@@ -1,10 +1,12 @@
 =====================
-Get Certbot
+Manually Installing Certbot
 =====================
 
 .. contents:: Table of Contents
    :local:
 
+.. note::
+    To get started quickly, use the `interactive installation guide <https://certbot.eff.org>`_. Most people should not need to install Certbot manually.
 
 About Certbot
 =============

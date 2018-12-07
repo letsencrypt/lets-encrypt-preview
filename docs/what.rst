@@ -1,6 +1,8 @@
-======================
-What is a Certificate?
-======================
+.. _what:
+
+==================
+About Certificates
+==================
 
 A public key or digital *certificate* (formerly called an SSL certificate) uses a public key 
 and a private key to enable secure communication between a client program (web browser, email client, 

@@ -4,6 +4,7 @@ Welcome to the Certbot documentation!
 .. toctree::
    :maxdepth: 2
 
+   start
    intro
    what
    install
@@ -15,6 +16,7 @@ Welcome to the Certbot documentation!
 .. toctree::
    :maxdepth: 1
 
+   man/certbot
    api
 
 

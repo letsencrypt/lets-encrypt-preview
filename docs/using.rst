@@ -1,6 +1,8 @@
-==========
-User Guide
-==========
+.. _using:
+
+==================
+Certbot User Guide
+==================
 
 .. contents:: Table of Contents
    :local:
@@ -41,6 +43,13 @@ Plugins that do both can be used with the ``certbot run`` command, which is the 
 when no command is specified. The ``run`` subcommand can also be used to specify
 a combination_ of distinct authenticator and installer plugins.
 
+Under the hood, plugins use one of several ACME protocol challenges_ to
+prove you control a domain. The options are http-01_ (which uses port 80),
+tls-sni-01_ (port 443) and dns-01_ (requiring configuration of a DNS server on
+port 53, though that's often not the same machine as your webserver). A few
+plugins support more than one challenge type, in which case you can choose one
+with ``--preferred-challenges``.
+
 =========== ==== ==== =============================================================== =============================
 Plugin      Auth Inst Notes                                                           Challenge types (and port)
 =========== ==== ==== =============================================================== =============================
@@ -67,12 +76,6 @@ manual_     Y    N    | Helps you obtain a certificate by giving you instruction
 
 .. |dns_plugs| replace:: :ref:`DNS plugins <dns_plugins>`
 
-Under the hood, plugins use one of several ACME protocol challenges_ to
-prove you control a domain. The options are http-01_ (which uses port 80),
-tls-sni-01_ (port 443) and dns-01_ (requiring configuration of a DNS server on
-port 53, though that's often not the same machine as your webserver). A few
-plugins support more than one challenge type, in which case you can choose one
-with ``--preferred-challenges``.
 
 There are also many third-party-plugins_ available. Below we describe in more detail
 the circumstances in which each plugin can be used, and how to use it.
@@ -312,6 +315,8 @@ heroku_     Y    Y    Integration with Heroku SSL
 
 If you're interested, you can also :ref:`write your own plugin <dev-plugin>`.
 
+.. include:: challenges.rst
+
 .. _managing-certs:
 
 Managing certificates
@@ -487,82 +492,9 @@ then restart it after the plugin is finished. Example::
 
   certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
 
-If a hook exits with a non-zero exit code, the error will be printed
-to ``stderr`` but renewal will be attempted anyway. A failing hook
-doesn't directly cause Certbot to exit with a non-zero exit code, but
-since Certbot exits with a non-zero exit code when renewals fail, a
-failed hook causing renewal failures will indirectly result in a
-non-zero exit code. Hooks will only be run if a certificate is due for
-renewal, so you can run the above command frequently without
-unnecessarily stopping your webserver.
+For more information about hooks, see :ref:`hooks`.
 
-``--pre-hook`` and ``--post-hook`` hooks run before and after every renewal
-attempt. If you want your hook to run only after a successful renewal, use
-``--deploy-hook`` in a command like this.
-
-``certbot renew --deploy-hook /path/to/deploy-hook-script``
-
-For example, if you have a daemon that does not read its certificates as the
-root user, a deploy hook like this can copy them to the correct location and
-apply appropriate file permissions.
-
-/path/to/deploy-hook-script
-
-.. code-block:: none
-
-   #!/bin/sh
-
-   set -e
-
-   for domain in $RENEWED_DOMAINS; do
-           case $domain in
-           example.com)
-                   daemon_cert_root=/etc/some-daemon/certs
-
-                   # Make sure the certificate and private key files are
-                   # never world readable, even just for an instant while
-                   # we're copying them into daemon_cert_root.
-                   umask 077
-
-                   cp "$RENEWED_LINEAGE/fullchain.pem" "$daemon_cert_root/$domain.cert"
-                   cp "$RENEWED_LINEAGE/privkey.pem" "$daemon_cert_root/$domain.key"
-
-                   # Apply the proper file ownership and permissions for
-                   # the daemon to read its certificate and key.
-                   chown some-daemon "$daemon_cert_root/$domain.cert" \
-                           "$daemon_cert_root/$domain.key"
-                   chmod 400 "$daemon_cert_root/$domain.cert" \
-                           "$daemon_cert_root/$domain.key"
-
-                   service some-daemon restart >/dev/null
-                   ;;
-           esac
-   done
-
-You can also specify hooks by placing files in subdirectories of Certbot's
-configuration directory. Assuming your configuration directory is
-``/etc/letsencrypt``, any executable files found in
-``/etc/letsencrypt/renewal-hooks/pre``,
-``/etc/letsencrypt/renewal-hooks/deploy``, and
-``/etc/letsencrypt/renewal-hooks/post`` will be run as pre, deploy, and post
-hooks respectively when any certificate is renewed with the ``renew``
-subcommand. These hooks are run in alphabetical order and are not run for other
-subcommands. (The order the hooks are run is determined by the byte value of
-the characters in their filenames and is not dependent on your locale.)
-
-Hooks specified in the command line, :ref:`configuration file
-<config-file>`, or :ref:`renewal configuration files <renewal-config-file>` are
-run as usual after running all hooks in these directories. One minor exception
-to this is if a hook specified elsewhere is simply the path to an executable
-file in the hook directory of the same type (e.g. your pre-hook is the path to
-an executable in ``/etc/letsencrypt/renewal-hooks/pre``), the file is not run a
-second time. You can stop Certbot from automatically running executables found
-in these directories by including ``--no-directory-hooks`` on the command line.
-
-More information about hooks can be found by running
-``certbot --help renew``.
-
-If you're sure that this command executes successfully without human
+If you're sure that the ``renew`` command executes successfully without human
 intervention, you can add the command to ``crontab`` (since certificates
 are only renewed when they're determined to be near expiry, the command
 can run on a regular basis, like every week or every day). In that case,
@@ -883,7 +815,82 @@ Example usage for DNS-01 (Cloudflare API v4) (for example purposes only, do not 
        fi
    fi
 
-.. _lock-files:
+If a hook exits with a non-zero exit code, the error will be printed
+to ``stderr`` but renewal will be attempted anyway. A failing hook
+doesn't directly cause Certbot to exit with a non-zero exit code, but
+since Certbot exits with a non-zero exit code when renewals fail, a
+failed hook causing renewal failures will indirectly result in a
+non-zero exit code. Hooks will only be run if a certificate is due for
+renewal, so you can run the above command frequently without
+unnecessarily stopping your webserver.
+
+``--pre-hook`` and ``--post-hook`` hooks run before and after every renewal
+attempt. If you want your hook to run only after a successful renewal, use
+``--deploy-hook`` in a command like this.
+
+``certbot renew --deploy-hook /path/to/deploy-hook-script``
+
+For example, if you have a daemon that does not read its certificates as the
+root user, a deploy hook like this can copy them to the correct location and
+apply appropriate file permissions.
+
+/path/to/deploy-hook-script
+
+.. code-block:: none
+
+   #!/bin/sh
+
+   set -e
+
+   for domain in $RENEWED_DOMAINS; do
+           case $domain in
+           example.com)
+                   daemon_cert_root=/etc/some-daemon/certs
+
+                   # Make sure the certificate and private key files are
+                   # never world readable, even just for an instant while
+                   # we're copying them into daemon_cert_root.
+                   umask 077
+
+                   cp "$RENEWED_LINEAGE/fullchain.pem" "$daemon_cert_root/$domain.cert"
+                   cp "$RENEWED_LINEAGE/privkey.pem" "$daemon_cert_root/$domain.key"
+
+                   # Apply the proper file ownership and permissions for
+                   # the daemon to read its certificate and key.
+                   chown some-daemon "$daemon_cert_root/$domain.cert" \
+                           "$daemon_cert_root/$domain.key"
+                   chmod 400 "$daemon_cert_root/$domain.cert" \
+                           "$daemon_cert_root/$domain.key"
+
+                   service some-daemon restart >/dev/null
+                   ;;
+           esac
+   done
+
+You can also specify hooks by placing files in subdirectories of Certbot's
+configuration directory. Assuming your configuration directory is
+``/etc/letsencrypt``, any executable files found in
+``/etc/letsencrypt/renewal-hooks/pre``,
+``/etc/letsencrypt/renewal-hooks/deploy``, and
+``/etc/letsencrypt/renewal-hooks/post`` will be run as pre, deploy, and post
+hooks respectively when any certificate is renewed with the ``renew``
+subcommand. These hooks are run in alphabetical order and are not run for other
+subcommands. (The order the hooks are run is determined by the byte value of
+the characters in their filenames and is not dependent on your locale.)
+
+Hooks specified in the command line, :ref:`configuration file
+<config-file>`, or :ref:`renewal configuration files <renewal-config-file>` are
+run as usual after running all hooks in these directories. One minor exception
+to this is if a hook specified elsewhere is simply the path to an executable
+file in the hook directory of the same type (e.g. your pre-hook is the path to
+an executable in ``/etc/letsencrypt/renewal-hooks/pre``), the file is not run a
+second time. You can stop Certbot from automatically running executables found
+in these directories by including ``--no-directory-hooks`` on the command line.
+
+More information about hooks can be found by running
+``certbot --help renew``.
+
+.. include:: ciphers.rst
 
 Changing the ACME Server
 ========================
@@ -905,6 +912,9 @@ validation for wildcard domains must be done through modifications to
 DNS records which means that the dns-01_ challenge type must be used. To
 see a list of Certbot plugins that support this challenge type and how
 to use them, see plugins_.
+
+
+.. _lock-files:
 
 Lock Files
 ==========
