@@ -8,6 +8,7 @@ REQUIREMENTS = [
     '-e acme[dev]',
     '-e .[dev,docs]',
     '-e certbot-apache',
+    '-e certbot-dns-bookmyname',
     '-e certbot-dns-cloudflare',
     '-e certbot-dns-cloudxns',
     '-e certbot-dns-digitalocean',

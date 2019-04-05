@@ -163,7 +163,8 @@ def choose_plugin(prepared, question):
         else:
             return None
 
-noninstaller_plugins = ["webroot", "manual", "standalone", "dns-cloudflare", "dns-cloudxns",
+noninstaller_plugins = ["webroot", "manual", "standalone",
+                        "dns-bookmyname", "dns-cloudflare", "dns-cloudxns",
                         "dns-digitalocean", "dns-dnsimple", "dns-dnsmadeeasy", "dns-gehirn",
                         "dns-google", "dns-linode", "dns-luadns", "dns-nsone", "dns-ovh",
                         "dns-rfc2136", "dns-route53", "dns-sakuracloud"]
@@ -279,6 +280,8 @@ def cli_plugin_requests(config):  # pylint: disable=too-many-branches
         req_auth = set_configurator(req_auth, "webroot")
     if config.manual:
         req_auth = set_configurator(req_auth, "manual")
+    if config.dns_bookmyname:
+        req_auth = set_configurator(req_auth, "dns-bookmyname")
     if config.dns_cloudflare:
         req_auth = set_configurator(req_auth, "dns-cloudflare")
     if config.dns_cloudxns:

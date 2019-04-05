@@ -25,6 +25,7 @@ class PluginEntryPoint(object):
     PREFIX_FREE_DISTRIBUTIONS = [
         "certbot",
         "certbot-apache",
+        "certbot-dns-bookmyname",
         "certbot-dns-cloudflare",
         "certbot-dns-cloudxns",
         "certbot-dns-digitalocean",
