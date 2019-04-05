@@ -1443,6 +1443,10 @@ def _plugins_parsing(helpful, plugins):
                 default=flag_default("dns_cloudxns"),
                 help=("Obtain certificates using a DNS TXT record (if you are "
                      "using CloudXNS for DNS)."))
+    helpful.add(["plugins", "certonly"], "--dns-conoha", action="store_true",
+                default=flag_default("dns_conoha"),
+                help=("Obtain certificates using a DNS TXT record (if you are "
+                      "using ConoHa for DNS)."))
     helpful.add(["plugins", "certonly"], "--dns-digitalocean", action="store_true",
                 default=flag_default("dns_digitalocean"),
                 help=("Obtain certificates using a DNS TXT record (if you are "

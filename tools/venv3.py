@@ -8,6 +8,7 @@ REQUIREMENTS = [
     '-e certbot-apache',
     '-e certbot-dns-cloudflare',
     '-e certbot-dns-cloudxns',
+    '-e certbot-dns-conoha',
     '-e certbot-dns-digitalocean',
     '-e certbot-dns-dnsimple',
     '-e certbot-dns-dnsmadeeasy',

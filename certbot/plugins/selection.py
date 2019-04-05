@@ -164,9 +164,9 @@ def choose_plugin(prepared, question):
             return None
 
 noninstaller_plugins = ["webroot", "manual", "standalone", "dns-cloudflare", "dns-cloudxns",
-                        "dns-digitalocean", "dns-dnsimple", "dns-dnsmadeeasy", "dns-gehirn",
-                        "dns-google", "dns-linode", "dns-luadns", "dns-nsone", "dns-ovh",
-                        "dns-rfc2136", "dns-route53", "dns-sakuracloud"]
+                        "dns-conoha", "dns-digitalocean", "dns-dnsimple", "dns-dnsmadeeasy",
+                        "dns-gehirn", "dns-google", "dns-linode", "dns-luadns", "dns-nsone",
+                        "dns-ovh", "dns-rfc2136", "dns-route53", "dns-sakuracloud"]
 
 def record_chosen_plugins(config, plugins, auth, inst):
     "Update the config entries to reflect the plugins we actually selected."
@@ -283,6 +283,8 @@ def cli_plugin_requests(config):  # pylint: disable=too-many-branches
         req_auth = set_configurator(req_auth, "dns-cloudflare")
     if config.dns_cloudxns:
         req_auth = set_configurator(req_auth, "dns-cloudxns")
+    if config.dns_conoha:
+        req_auth = set_configurator(req_auth, "dns-conoha")
     if config.dns_digitalocean:
         req_auth = set_configurator(req_auth, "dns-digitalocean")
     if config.dns_dnsimple:
