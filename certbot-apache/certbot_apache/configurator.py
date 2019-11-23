@@ -378,6 +378,7 @@ class ApacheConfigurator(common.Installer):
             a lack of directives
 
         """
+        logger.debug("Processing domain %s...", domain)
         vhosts = self.choose_vhosts(domain)
         for vhost in vhosts:
             self._deploy_cert(vhost, cert_path, key_path, chain_path, fullchain_path)
@@ -1181,6 +1182,7 @@ class ApacheConfigurator(common.Installer):
         ssl_vhost.ancestor = nonssl_vhost
 
         self.vhosts.append(ssl_vhost)
+        self._fix_vhost_paths(ssl_vhost)
 
         # NOTE: Searches through Augeas seem to ruin changes to directives
         #       The configuration must also be saved before being searched
@@ -1192,6 +1194,15 @@ class ApacheConfigurator(common.Installer):
         self._add_name_vhost_if_necessary(ssl_vhost)
 
         return ssl_vhost
+
+    def _fix_vhost_paths(self, new_vhost):
+        """
+        Helper method for make_vhost_ssl for fixing paths for pre-existing
+        VirtualHosts that reside in the same path, and might need indices after
+        adding a new VirtualHost.
+        """
+        for i, vhost in enumerate(self.vhosts):
+            self.vhosts[i].path = self.parser.fix_path_indices(vhost.path, new_vhost.path)
 
     def _get_new_vh_path(self, orig_matches, new_matches):
         """ Helper method for make_vhost_ssl for matching augeas paths. Returns

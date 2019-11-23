@@ -881,6 +881,53 @@ class ApacheParser(object):
             remove_old = False
         return use_new, remove_old
 
+    def fix_path_indices(self, old_path, new_path):
+        """Fix Augeas path if required.
+
+        This function adds index to Auges path if there's a new node created to
+        the corresponding path.
+
+        :param str old_path: Path to fix
+        :param str new_path: Newly created path
+
+        :returns: A fixed Augeas DOM path
+        :rtype: str
+        """
+
+        new_fragments = new_path.split("/")
+        old_fragments = old_path.split("/")
+
+        fixed_path = []
+        div_path = False
+        for i, v in enumerate(old_fragments):
+            if div_path:
+                # Paths are diverged from here on, so use old_path values
+                fixed_path.append(v)
+            else:
+                try:
+                    fixed_path.append(self._fix_path(v, new_fragments[i]))
+                except IndexError:
+                    fixed_path.append(v)
+                except ValueError:
+                    div_path = True
+                    fixed_path.append(v)
+
+        return "/".join(fixed_path)
+
+    def _fix_path(self, old, new):
+        """Helper function to add index to Augeas path if required"""
+        index_re = r"\[\d*\]"
+        if old == new:
+            return old
+        if re.search(index_re, old):
+            # Already has an index
+            return old
+        if re.sub(index_re, "", new) == old:
+            # Path matches, but index needs to get added, starts at 1
+            return old+"[1]"
+        # Raise ValueError to signal path divergence
+        raise ValueError
+
     def _remove_httpd_transform(self, filepath):
         """Remove path from Augeas transform
 
