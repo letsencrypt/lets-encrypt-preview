@@ -1,0 +1,4 @@
+include LICENSE.txt
+include README.rst
+recursive-include docs *
+recursive-include certbot_dns_ispconfig/testdata *

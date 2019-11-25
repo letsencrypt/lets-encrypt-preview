@@ -161,6 +161,7 @@ Authors
 * [Mathieu Leduc-Hamel](https://github.com/mlhamel)
 * [Matt Bostock](https://github.com/mattbostock)
 * [Matthew Ames](https://github.com/SuperMatt)
+* [Matthias Bilger](https://github.com/m42e)
 * [Michael Schumacher](https://github.com/schumaml)
 * [Michael Strache](https://github.com/Jarodiv)
 * [Michael Sverdlin](https://github.com/sveder)

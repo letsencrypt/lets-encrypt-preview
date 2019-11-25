@@ -6,7 +6,7 @@ Certbot adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-*
+* ISPConfig DNS Authenticator
 
 ### Removed
 
