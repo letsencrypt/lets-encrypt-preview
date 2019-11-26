@@ -49,5 +49,31 @@ class PollErrorTest(unittest.TestCase):
                          'sentinel.AR2})' % repr(set()), repr(self.invalid))
 
 
+class ValidationErrorTest(unittest.TestCase):
+    """Tests for acme.errors.ValidationError"""
+
+    def setUp(self):
+        from acme.errors import ValidationError
+        failed_authzr = mock.MagicMock()
+        failed_authzr.body.identifier = 'example.com'
+        challenge = mock.MagicMock()
+        challenge.chall.typ = 'dns-01'
+        challenge.error.typ = 'generic error'
+        challenge.error.detail = 'detail message'
+        failed_authzr.body.challenges = [challenge]
+        self.error = ValidationError([failed_authzr])
+
+    def test_repr(self):
+        self.assertEqual(
+            '\n Authorization for identifier example.com failed.'
+            '\n Here are the challenges that were not fulfilled:'
+            '\n Challenge Type: dns-01'
+            '\n Error information: '
+            '\n Type: generic error'
+            '\n Details: detail message \n\n',
+            str(self.error),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()  # pragma: no cover

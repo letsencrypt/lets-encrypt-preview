@@ -91,6 +91,25 @@ class ValidationError(Error):
         self.failed_authzrs = failed_authzrs
         super(ValidationError, self).__init__()
 
+    def __str__(self):
+        msg = ''
+        for authzr in self.failed_authzrs:
+            msg += '\n Authorization for identifier %s failed.' % (
+                authzr.body.identifier)
+            msg += '\n Here are the challenges that were not fulfilled:'
+            for challenge in authzr.body.challenges:
+                msg += \
+                    '\n Challenge Type: %s' \
+                    '\n Error information: ' \
+                    '\n Type: %s' \
+                    '\n Details: %s \n\n' % (
+                        challenge.chall.typ,
+                        challenge.error.typ if challenge.error else '',
+                        challenge.error.detail if challenge.error else '',
+                    )
+        return msg
+
+
 class TimeoutError(Error):
     """Error for when polling an authorization or an order times out."""
 
