@@ -469,8 +469,8 @@ class ApacheConfigurator(common.Installer):
             wildcard_marker = b"*."
         return domain.startswith(wildcard_marker)
 
-    def deploy_cert(self, domain, cert_path, key_path,
-                    chain_path=None, fullchain_path=None):
+    def deploy_cert(self, domain, cert_path, key_path, chain_path=None,
+                    fullchain_path=None, privkey_fullchain_path=None):
         """Deploys certificate to specified virtual host.
 
         Currently tries to find the last directives to deploy the certificate
@@ -489,7 +489,8 @@ class ApacheConfigurator(common.Installer):
         """
         vhosts = self.choose_vhosts(domain)
         for vhost in vhosts:
-            self._deploy_cert(vhost, cert_path, key_path, chain_path, fullchain_path)
+            self._deploy_cert(vhost, cert_path, key_path, chain_path,
+                    fullchain_path, privkey_fullchain_path)
 
     def choose_vhosts(self, domain, create_if_no_ssl=True):
         """
@@ -584,7 +585,8 @@ class ApacheConfigurator(common.Installer):
         self._wildcard_vhosts[domain] = return_vhosts
         return return_vhosts
 
-    def _deploy_cert(self, vhost, cert_path, key_path, chain_path, fullchain_path):
+    def _deploy_cert(self, vhost, cert_path, key_path, chain_path,
+                    fullchain_path, privkey_fullchain_path):
         """
         Helper function for deploy_cert() that handles the actual deployment
         this exists because we might want to do multiple deployments per

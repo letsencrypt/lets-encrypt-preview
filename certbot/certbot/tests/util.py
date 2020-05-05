@@ -124,7 +124,7 @@ def make_lineage(config_dir, testfile):
         shutil.copyfile(os.path.join(sample_archive, kind),
                         os.path.join(archive_dir, kind))
 
-    for kind in storage.ALL_FOUR:
+    for kind in storage.ALL_ITEMS:
         os.symlink(os.path.join(archive_dir, '{0}1.pem'.format(kind)),
                    os.path.join(live_dir, '{0}.pem'.format(kind)))
 

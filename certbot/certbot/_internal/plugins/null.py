@@ -29,8 +29,8 @@ class Installer(common.Plugin):
     def get_all_names(self):
         return []
 
-    def deploy_cert(self, domain, cert_path, key_path,
-                    chain_path=None, fullchain_path=None):
+    def deploy_cert(self, domain, cert_path, key_path, chain_path=None,
+                    fullchain_path=None, privkey_fullchain_path=None):
         pass  # pragma: no cover
 
     def enhance(self, domain, enhancement, options=None):

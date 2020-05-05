@@ -276,7 +276,8 @@ class IInstaller(IPlugin):
 
         """
 
-    def deploy_cert(domain, cert_path, key_path, chain_path, fullchain_path):
+    def deploy_cert(domain, cert_path, key_path, chain_path, fullchain_path,
+                    privkey_fullchain_path):
         """Deploy certificate.
 
         :param str domain: domain to deploy certificate file
@@ -285,6 +286,8 @@ class IInstaller(IPlugin):
         :param str chain_path: absolute path to the certificate chain file
         :param str fullchain_path: absolute path to the certificate fullchain
             file (cert plus chain)
+        :param str fullchain_path: absolute path to the file wih the private key
+            and the certificate fullchain
 
         :raises .PluginError: when cert cannot be deployed
 
@@ -564,6 +567,16 @@ class RenewableCert(object):
     @abc.abstractproperty
     def fullchain_path(self):
         """Path to the full chain file.
+
+        The full chain is the certificate file plus the chain file.
+
+        :rtype: str
+
+        """
+
+    @abc.abstractproperty
+    def privkey_fullchain_path(self):
+        """Path to the file containing the private key and the full chain.
 
         The full chain is the certificate file plus the chain file.
 

@@ -484,14 +484,16 @@ class Client(object):
 
         return abs_cert_path, abs_chain_path, abs_fullchain_path
 
-    def deploy_certificate(self, domains, privkey_path,
-                           cert_path, chain_path, fullchain_path):
+    def deploy_certificate(self, domains, privkey_path, cert_path,
+                           chain_path, fullchain_path, privkey_fullchain_path):
         """Install certificate
 
         :param list domains: list of domains to install the certificate
         :param str privkey_path: path to certificate private key
         :param str cert_path: certificate file path (optional)
         :param str chain_path: chain file path
+        :param str fullchain_path: fullchain file path
+        :param str privkey_fullchain_path: privkey_fullchain file path
 
         """
         if self.installer is None:
@@ -508,7 +510,8 @@ class Client(object):
                     domain=dom, cert_path=os.path.abspath(cert_path),
                     key_path=os.path.abspath(privkey_path),
                     chain_path=chain_path,
-                    fullchain_path=fullchain_path)
+                    fullchain_path=fullchain_path,
+                    privkey_fullchain_path=privkey_fullchain_path)
                 self.installer.save()  # needed by the Apache plugin
 
             self.installer.save("Deployed ACME Certificate")

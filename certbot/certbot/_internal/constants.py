@@ -1,6 +1,7 @@
 """Certbot constants."""
 import logging
 
+import distutils.version
 import pkg_resources
 
 from acme import challenges
@@ -216,3 +217,6 @@ ALL_SSL_DHPARAMS_HASHES = [
     '9ba6429597aeed2d8617a7705b56e96d044f64b07971659382e426675105654b',
 ]
 """SHA256 hashes of the contents of all versions of SSL_DHPARAMS_SRC"""
+
+PKFC_VERSION = distutils.version.StrictVersion('1.4.0a1')
+"""Version of certbot that introduced the privkey_fullchain lineage item."""

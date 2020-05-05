@@ -749,7 +749,8 @@ def _install_cert(config, le_client, domains, lineage=None):
     assert path_provider.cert_path is not None
 
     le_client.deploy_certificate(domains, path_provider.key_path,
-        path_provider.cert_path, path_provider.chain_path, path_provider.fullchain_path)
+        path_provider.cert_path, path_provider.chain_path,
+        path_provider.fullchain_path, path_provider.privkey_fullchain_path)
     le_client.enhance_config(domains, path_provider.chain_path)
 
 
