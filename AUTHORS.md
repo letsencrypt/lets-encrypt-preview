@@ -5,6 +5,7 @@ Authors
 * [Aaron Zirbes](https://github.com/aaronzirbes)
 * Aaron Zuehlke
 * Ada Lovelace
+* [Adam Miritis](https://github.com/Foxh0und)
 * [Adam Woodbeck](https://github.com/awoodbeck)
 * [Adrien Ferrand](https://github.com/adferrand)
 * [Aidin Gharibnavaz](https://github.com/aidin36)

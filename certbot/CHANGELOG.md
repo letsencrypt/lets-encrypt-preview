@@ -535,6 +535,7 @@ More details about these changes can be found on our GitHub repo.
 ### Added
 
 * Added support for Cloudflare's limited-scope API Tokens
+* Logging for distro detection.
 
 ### Changed
 
