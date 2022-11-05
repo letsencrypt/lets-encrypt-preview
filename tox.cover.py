@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 DEFAULT_PACKAGES = [
-    'certbot', 'acme', 'certbot_apache', 'certbot_dns_cloudflare', 'certbot_dns_cloudxns',
+    'certbot', 'acme', 'certbot_apache', 'certbot_access_server', 'certbot_dns_cloudflare', 'certbot_dns_cloudxns',
     'certbot_dns_digitalocean', 'certbot_dns_dnsimple', 'certbot_dns_dnsmadeeasy',
     'certbot_dns_gehirn', 'certbot_dns_google', 'certbot_dns_linode', 'certbot_dns_luadns',
     'certbot_dns_nsone', 'certbot_dns_ovh', 'certbot_dns_rfc2136', 'certbot_dns_route53',
@@ -17,6 +17,7 @@ COVER_THRESHOLDS = {
     'certbot': {'linux': 94, 'windows': 96},
     'acme': {'linux': 100, 'windows': 99},
     'certbot_apache': {'linux': 100, 'windows': 100},
+    'certbot_access_server': {'linux': 94, 'windows': 94},
     'certbot_dns_cloudflare': {'linux': 98, 'windows': 98},
     'certbot_dns_cloudxns': {'linux': 98, 'windows': 98},
     'certbot_dns_digitalocean': {'linux': 98, 'windows': 98},
@@ -34,7 +35,7 @@ COVER_THRESHOLDS = {
     'certbot_nginx': {'linux': 97, 'windows': 97},
 }
 
-SKIP_PROJECTS_ON_WINDOWS = ['certbot-apache']
+SKIP_PROJECTS_ON_WINDOWS = ['certbot-apache', 'certbot-access-server']
 
 
 def cover(package):

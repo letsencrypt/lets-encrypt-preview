@@ -91,6 +91,7 @@ More details about these changes can be found on our GitHub repo.
 
 ### Added
 
+* Added installer plugin for [OpenVPN Access Server](https://openvpn.net/access-server/)
 * Updated Apache/NGINX TLS configs to document contents are based on ssl-config.mozilla.org
 
 
