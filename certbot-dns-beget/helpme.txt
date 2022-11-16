@@ -1,0 +1,5 @@
+# Beget API credentials used by Certbot
+dns_beget_login = login
+dns_beget_password = passwd
+
+certbot certonly --dns-beget --dns-beget-credentials ~/.secrets/certbot/begete.ini

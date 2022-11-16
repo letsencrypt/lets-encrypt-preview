@@ -1,0 +1,25 @@
+name: certbot-dns-beget
+summary: Beget DNS Authenticator plugin for Certbot
+description: Beget DNS Authenticator plugin for Certbot
+confinement: strict
+grade: devel
+base: core20
+adopt-info: certbot-dns-beget
+
+parts:
+  certbot-dns-beget:
+    plugin: python
+    source: .
+    constraints: [$SNAPCRAFT_PART_SRC/snap-constraints.txt]
+    override-pull: |
+        snapcraftctl pull
+        snapcraftctl set-version `grep ^version $SNAPCRAFT_PART_SRC/setup.py | cut -f2 -d= | tr -d "'[:space:]"`
+    build-environment:
+      - EXCLUDE_CERTBOT_DEPS: "True"
+
+slots:
+  certbot:
+    interface: content
+    content: certbot-1
+    read:
+      - $SNAP/lib/python3.8/site-packages

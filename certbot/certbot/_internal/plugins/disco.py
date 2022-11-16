@@ -40,6 +40,7 @@ PREFIX_FREE_DISTRIBUTIONS = [
     "certbot-dns-rfc2136",
     "certbot-dns-route53",
     "certbot-dns-sakuracloud",
+    "certbot-dns-beget",
     "certbot-nginx",
 ]
 """Distributions for which prefix will be omitted."""

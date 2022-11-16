@@ -169,7 +169,7 @@ def choose_plugin(prepared: List[disco.PluginEntryPoint],
 noninstaller_plugins = ["webroot", "manual", "standalone", "dns-cloudflare",
                         "dns-digitalocean", "dns-dnsimple", "dns-dnsmadeeasy", "dns-gehirn",
                         "dns-google", "dns-linode", "dns-luadns", "dns-nsone", "dns-ovh",
-                        "dns-rfc2136", "dns-route53", "dns-sakuracloud"]
+                        "dns-rfc2136", "dns-route53", "dns-sakuracloud", "dns-beget"]
 
 
 def record_chosen_plugins(config: configuration.NamespaceConfig, plugins: disco.PluginsRegistry,
@@ -338,6 +338,8 @@ def cli_plugin_requests(config: configuration.NamespaceConfig
         req_auth = set_configurator(req_auth, "dns-route53")
     if config.dns_sakuracloud:
         req_auth = set_configurator(req_auth, "dns-sakuracloud")
+    if config.dns_beget:
+        req_auth = set_configurator(req_auth, "dns-beget")
     logger.debug("Requested authenticator %s and installer %s", req_auth, req_inst)
     return req_auth, req_inst
 
