@@ -2,24 +2,6 @@
 
 Certbot adheres to [Semantic Versioning](https://semver.org/).
 
-## 2.8.0 - master
-
-### Added
-
-*
-
-### Changed
-
-* Support for Python 3.7 was removed.
-
-### Fixed
-
-* `certbot-dns-ovh` plugin now requires `lexicon>=3.15.1` to ensure a consistent behavior with OVH APIs.
-* Fixed a bug where argument sources weren't correctly detected in abbreviated
-  arguments, short arguments, and some other circumstances
-
-More details about these changes can be found on our GitHub repo.
-
 ## 2.7.1 - 2023-10-10
 
 ### Fixed

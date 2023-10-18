@@ -54,6 +54,7 @@ dev_extras = [
     # format. See
     # https://github.com/python-poetry/poetry-plugin-export/blob/efcfd34859e72f6a79a80398f197ce6eb2bbd7cd/CHANGELOG.md#added.
     'poetry-plugin-export>=1.1.0',
+    'towncrier',
     'twine',
 ]
 

@@ -1,0 +1,8 @@
+[tool.towncrier]
+package = "certbot"
+directory = "newsfragments"
+filename = "CHANGELOG.md"
+template = "tools/changelog_template.jinja"
+title_format = "## {version} - {project_date}"
+start_string = "Certbot adheres to [Semantic Versioning](https://semver.org/).\n"
+issue_format = "[#{issue}](https://github.com/certbot/certbot/issues/{issue})"

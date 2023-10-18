@@ -198,15 +198,7 @@ while ! git commit --gpg-sign="$RELEASE_GPG_KEY" -m "Release $version"; do
 done
 git tag --local-user "$RELEASE_GPG_KEY" --sign --message "Release $version" "$tag"
 
-# Add master section to CHANGELOG.md
-header=$(head -n 4 certbot/CHANGELOG.md)
-body=$(sed s/nextversion/$nextversion/ tools/_changelog_top.txt)
-footer=$(tail -n +5 certbot/CHANGELOG.md)
-echo "$header
-
-$body
-
-$footer" > certbot/CHANGELOG.md
+towncrier build
 git add certbot/CHANGELOG.md
 git commit -m "Add contents to certbot/CHANGELOG.md for next version"
 
