@@ -2,6 +2,7 @@
 import atexit
 import json
 import os
+import platform
 import stat
 import sys
 from contextlib import ExitStack
@@ -22,7 +23,8 @@ PEBBLE_VERSION = 'v2.3.1'
 
 def fetch(workspace: str, http_01_port: int = DEFAULT_HTTP_01_PORT) -> Tuple[str, str, str]:
     # pylint: disable=missing-function-docstring
-    suffix = 'linux-amd64' if os.name != 'nt' else 'windows-amd64.exe'
+    suffixes = {'Windows': 'windows-amd64.exe', 'Darwin': 'darwin-arm64'}
+    suffix = suffixes.get(platform.system(), 'linux-amd64')
 
     file_manager = ExitStack()
     atexit.register(file_manager.close)
