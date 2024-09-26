@@ -18,9 +18,6 @@ base: core24
 grade: stable
 adopt-info: certbot
 
-environment:
-  PYTHONPATH: "$SNAP/lib/python3.12/site-packages:${PYTHONPATH}"
-
 apps:
   certbot:
     command: bin/python3 -s $SNAP/bin/certbot
@@ -51,7 +48,6 @@ parts:
       - ./certbot-nginx
     stage:
       - -usr/lib/python3.12/sitecustomize.py # maybe unnecessary
-      - -pyvenv.cfg
       # Old versions of this file used to unstage
       # lib/python3.8/site-packages/augeas.py to avoid conflicts between
       # python-augeas 0.5.0 which was pinned in snap-constraints.txt and
@@ -99,6 +95,8 @@ parts:
       python3 -m venv "${CRAFT_PART_INSTALL}"
       "${CRAFT_PART_INSTALL}/bin/python3" "${CRAFT_PART_SRC}/tools/pipstrap.py"
       craftctl default
+      sed -i "${CRAFT_PART_INSTALL}/pyvenv.cfg" \
+          -e 's@^home = '"${CRAFT_PART_INSTALL}"'/usr/bin$@home = /snap/certbot/current/usr/bin@g'
     override-pull: |
       craftctl default
       grep -v python-augeas "${CRAFT_PART_SRC}/tools/requirements.txt" >> "${CRAFT_PART_SRC}/snap-constraints.txt"
