@@ -310,6 +310,7 @@ pritunl_           N    Y    Install certificates in pritunl distributed OpenVPN
 proxmox_           N    Y    Install certificates in Proxmox Virtualization servers
 dns-standalone_    Y    N    Obtain certificates via an integrated DNS server
 dns-ispconfig_     Y    N    DNS Authentication using ISPConfig as DNS server
+dns-cloudns_       Y    N    DNS Authentication using ClouDNS API
 dns-clouddns_      Y    N    DNS Authentication using CloudDNS API
 dns-lightsail_     Y    N    DNS Authentication using Amazon Lightsail DNS API
 dns-inwx_          Y    Y    DNS Authentication for INWX through the XML API
@@ -339,6 +340,7 @@ dns-mijn-host_     Y    N    DNS Authentication using mijn.host DNS
 .. _external-auth: https://github.com/EnigmaBridge/certbot-external-auth
 .. _dns-standalone: https://github.com/siilike/certbot-dns-standalone
 .. _dns-ispconfig: https://github.com/m42e/certbot-dns-ispconfig
+.. _dns-cloudns: https://github.com/inventage/certbot-dns-cloudns
 .. _dns-clouddns: https://github.com/vshosting/certbot-dns-clouddns
 .. _dns-lightsail: https://github.com/noi/certbot-dns-lightsail
 .. _dns-inwx: https://github.com/oGGy990/certbot-dns-inwx/
