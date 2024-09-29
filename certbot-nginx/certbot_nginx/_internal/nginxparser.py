@@ -46,6 +46,7 @@ class RawNginxParser:
     quoted = dquoted | squoted
     head_tokenchars = Regex(r"(\$\{)|[^{};\s'\"]") # if (last_space)
     tail_tokenchars = Regex(r"(\$\{)|[^{;\s]") # else
+    lua_regex = Regex(r"[^{;\s}]+_by_lua_[^{]+") # regex for lua token
     tokenchars = Combine(head_tokenchars + ZeroOrMore(tail_tokenchars))
     paren_quote_extend = Combine(quoted + Literal(')') + ZeroOrMore(tail_tokenchars))
     # note: ')' allows extension, but then we fall into else, not last_space.
@@ -58,15 +59,19 @@ class RawNginxParser:
     comment = space + Literal('#') + restOfLine
 
     block = Forward()
+    anything_block = Forward()
+    anything_content =  Regex(r"[^{}]+")
+    anything_block <<= left_bracket + ZeroOrMore(anything_content | anything_block) + right_bracket
+    lua_block = space + lua_regex + anything_block
 
     # order matters! see issue 518, and also http { # server { \n}
     contents = Group(comment) | Group(block) | Group(assignment)
-
     block_begin = Group(whitespace_token_group)
     block_innards = Group(ZeroOrMore(contents) + space).leaveWhitespace()
     block << block_begin + left_bracket + block_innards + right_bracket
 
     script = ZeroOrMore(contents) + space + stringEnd
+    script.ignore(lua_block)
     script.parseWithTabs().leaveWhitespace()
 
     def __init__(self, source: str) -> None:
