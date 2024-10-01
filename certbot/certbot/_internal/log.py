@@ -373,8 +373,9 @@ def post_arg_parse_except_hook(exc_type: Type[BaseException], exc_value: BaseExc
             logger.error(str(exc_value))
             exit_func()
         logger.error('An unexpected error occurred:')
-        if messages.is_acme_error(exc_value):
-            logger.error(display_util.describe_acme_error(cast(messages.Error, exc_value)))
+        acme_error = getattr(exc_value, "error", exc_value)
+        if messages.is_acme_error(acme_error):
+            logger.error(display_util.describe_acme_error(cast(messages.Error, acme_error)))
         else:
             output = traceback.format_exception_only(exc_type, exc_value)
             # format_exception_only returns a list of strings each
