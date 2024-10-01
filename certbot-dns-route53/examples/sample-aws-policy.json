@@ -19,7 +19,19 @@
             ],
             "Resource" : [
                 "arn:aws:route53:::hostedzone/YOURHOSTEDZONEID"
-            ]
+            ],
+			"Condition": {
+				"ForAllValues:StringLike": {
+					"route53:ChangeResourceRecordSetsNormalizedRecordNames": [
+						"_acme-challenge.*"
+					]
+				},
+				"ForAllValues:StringEquals": {
+					"route53:ChangeResourceRecordSetsRecordTypes": [
+						"TXT"
+					]
+				}
+			}
         }
     ]
 }
