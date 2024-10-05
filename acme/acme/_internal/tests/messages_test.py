@@ -57,6 +57,11 @@ class ErrorTest(unittest.TestCase):
         assert 1 == len(parsed_error.subproblems)
         assert self.subproblem == parsed_error.subproblems[0]
 
+    def test_from_json_with_null_subproblems(self):
+        from acme.messages import Error
+        parsed_error = Error.from_json({**self.error.to_json(), 'subproblems': None})
+        assert parsed_error.subproblems is None
+
     def test_description(self):
         assert 'The request message was malformed' == self.error.description
         assert self.error_custom.description is None

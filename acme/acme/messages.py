@@ -143,8 +143,12 @@ class Error(jose.JSONObjectWithFields, errors.Error):
     # Mypy does not understand the josepy magic happening here, and falsely claims
     # that subproblems is redefined. Let's ignore the type check here.
     @subproblems.decoder  # type: ignore
-    def subproblems(value: List[Dict[str, Any]]) -> Tuple['Error', ...]:  # pylint: disable=no-self-argument,missing-function-docstring
-        return tuple(Error.from_json(subproblem) for subproblem in value)
+    def subproblems(value: Optional[List[Dict[str, Any]]]) -> Optional[Tuple['Error', ...]]:  # pylint: disable=no-self-argument,missing-function-docstring
+        return (
+            tuple(Error.from_json(subproblem) for subproblem in value)
+            if value is not None
+            else None
+        )
 
     @classmethod
     def with_code(cls, code: str, **kwargs: Any) -> 'Error':
