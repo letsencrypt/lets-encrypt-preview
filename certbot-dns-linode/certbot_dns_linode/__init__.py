@@ -32,7 +32,7 @@ Credentials
 Use of this plugin requires a configuration file containing Linode API
 credentials, obtained from your Linode account's `Applications & API
 Tokens page (legacy) <https://manager.linode.com/profile/api>`_ or `Applications
-& API Tokens page (new) <https://cloud.linode.com/profile/tokens>`_.
+& API Tokens page (new) <https://cloud.linode.com/profile/tokens>`_. The credentials require the following permissions: _________.
 
 .. code-block:: ini
    :name: credentials.ini
