@@ -50,7 +50,8 @@ class AuthenticatorTest(unittest.TestCase):
             self.root_challenge_path,
             "ZXZhR3hmQURzNnBTUmIyTEF2OUlaZjE3RHQzanV4R0orUEN0OTJ3citvQQ")
         self.config = mock.MagicMock(webroot_path=self.path,
-                                     webroot_map={"thing.com": self.path})
+                                     webroot_map={"thing.com": self.path},
+                                     webroot_propagation_seconds=0)
         self.auth = Authenticator(self.config, "webroot")
 
     def tearDown(self):
@@ -64,7 +65,7 @@ class AuthenticatorTest(unittest.TestCase):
     def test_add_parser_arguments(self):
         add = mock.MagicMock()
         self.auth.add_parser_arguments(add)
-        assert 2 == add.call_count
+        assert 3 == add.call_count
 
     def test_prepare(self):
         self.auth.prepare()  # shouldn't raise any exceptions
@@ -302,6 +303,23 @@ class AuthenticatorTest(unittest.TestCase):
         assert not os.path.exists(self.validation_path)
         assert os.path.exists(self.root_challenge_path)
 
+    @mock.patch('certbot.display.util.notify')
+    def test_propagation_seconds_default(self, mock_notify):
+        self.auth.prepare()
+        self.auth.perform([self.achall])
+
+        mock_notify.assert_not_called()
+
+    @mock.patch('certbot.display.util.notify')
+    def test_propagation_seconds_non_default(self, mock_notify):
+        self.config.webroot_propagation_seconds = 1
+        self.auth.prepare()
+        self.auth.perform([self.achall])
+
+        mock_notify.assert_called_once_with(
+            "Waiting 1 seconds for webroot challenge file(s) to propagate"
+        )
+
 
 class WebrootActionTest(unittest.TestCase):
     """Tests for webroot argparse actions."""
@@ -353,6 +371,14 @@ class WebrootActionTest(unittest.TestCase):
             self.path, self.achall.domain, other_webroot_path).split())
         assert args.webroot_map == {self.achall.domain: self.path}
         assert args.webroot_path == [self.path, other_webroot_path]
+
+    def test_propagation_seconds_default_action(self):
+        args = self.parser.parse_args([])
+        assert args.webroot_propagation_seconds == 0
+
+    def test_propagation_seconds_non_default_action(self):
+        args = self.parser.parse_args(["--webroot-propagation-seconds", "10"])
+        assert args.webroot_propagation_seconds == 10
 
     def _get_config_after_perform(self, config):
         from certbot._internal.plugins.webroot import Authenticator

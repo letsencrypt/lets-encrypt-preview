@@ -89,7 +89,11 @@ More details about these changes can be found on our GitHub repo.
 
 ### Added
 
-* Added support for [Alpine Linux](https://www.alpinelinux.org) distribution when is used the apache plugin
+* Added support for [Alpine Linux](https://www.alpinelinux.org) distribution when is used the apache plugin.
+* The webroot plugin now also supports the `--webroot-propagation-seconds`
+  option. Note that this is usually not required, but for some systems with 
+  distributed webroots requiring syncing this might be useful.
+
 
 ### Changed
 

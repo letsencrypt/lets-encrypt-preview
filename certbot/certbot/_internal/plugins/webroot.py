@@ -3,6 +3,7 @@ import argparse
 import collections
 import json
 import logging
+from time import sleep
 from typing import Any
 from typing import Callable
 from typing import DefaultDict
@@ -87,6 +88,9 @@ to serve all files under specified web root ({0})."""
                  "-d entries. At present, if you put webroot-map in a config "
                  "file, it needs to be on a single line, like: webroot-map = "
                  '{"example.com":"/var/www"}.')
+        add("propagation-seconds", default=0, type=int,
+            help="The number of seconds to wait for the webroot challenge file(s) to propagate "
+                 "before asking the ACME server to verify the challenge.")
 
     def auth_hint(self, failed_achalls: List[AnnotatedChallenge]) -> str:  # pragma: no cover
         return ("The Certificate Authority failed to download the temporary challenge files "
@@ -113,7 +117,14 @@ to serve all files under specified web root ({0})."""
 
         self._create_challenge_dirs()
 
-        return [self._perform_single(achall) for achall in achalls]
+        resps = [self._perform_single(achall) for achall in achalls]
+
+        if self.conf('propagation-seconds'):
+            display_util.notify(f"Waiting {self.conf('propagation-seconds')} seconds for webroot "
+                                 "challenge file(s) to propagate")
+            sleep(self.conf('propagation-seconds'))
+
+        return resps
 
     def _set_webroots(self, achalls: Iterable[AnnotatedChallenge]) -> None:
         if self.conf("path"):
