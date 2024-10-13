@@ -15,6 +15,8 @@ from certbot.plugins import dns_test_common
 from certbot.plugins.dns_test_common import DOMAIN
 from certbot.tests import util as test_util
 
+from certbot_dns_rfc2136._internal.dns_rfc2136 import TXTRecord
+
 SERVER = '192.0.2.1'
 PORT = 53
 NAME = 'a-tsig-key.'
@@ -57,7 +59,7 @@ class AuthenticatorTest(test_util.TempDirTestCase, dns_test_common.BaseAuthentic
     def test_perform(self, unused_mock_get_utility):
         self.auth.perform([self.achall])
 
-        expected = [mock.call.add_txt_record('_acme-challenge.'+DOMAIN, mock.ANY, mock.ANY)]
+        expected = [mock.call.add_txt_records(TXTRecord(name='_acme-challenge.'+DOMAIN, content=mock.ANY, ttl=mock.ANY))]
         assert expected == self.mock_client.mock_calls
 
     def test_cleanup(self):
@@ -65,7 +67,7 @@ class AuthenticatorTest(test_util.TempDirTestCase, dns_test_common.BaseAuthentic
         self.auth._attempt_cleanup = True
         self.auth.cleanup([self.achall])
 
-        expected = [mock.call.del_txt_record('_acme-challenge.'+DOMAIN, mock.ANY)]
+        expected = [mock.call.del_txt_records(TXTRecord(name='_acme-challenge.'+DOMAIN, content=mock.ANY))]
         assert expected == self.mock_client.mock_calls
 
     def test_invalid_algorithm_raises(self):
@@ -119,7 +121,7 @@ class RFC2136ClientTest(unittest.TestCase):
         # _find_domain | pylint: disable=protected-access
         self.rfc2136_client._find_domain = mock.MagicMock(return_value="example.com")
 
-        self.rfc2136_client.add_txt_record("bar", "baz", 42)
+        self.rfc2136_client.add_txt_records([TXTRecord(name="bar", content="baz", ttl=42)])
 
         query_mock.assert_called_with(mock.ANY, SERVER, TIMEOUT, PORT)
         assert 'bar. 42 IN TXT "baz"' in str(query_mock.call_args[0][0])
@@ -131,7 +133,7 @@ class RFC2136ClientTest(unittest.TestCase):
         self.rfc2136_client._find_domain = mock.MagicMock(return_value="example.com")
 
         with pytest.raises(errors.PluginError):
-            self.rfc2136_client.add_txt_record("bar", "baz", 42)
+            self.rfc2136_client.add_txt_records([TXTRecord(name="bar", content="baz", ttl=42)])
 
     @mock.patch("dns.query.tcp")
     def test_add_txt_record_server_error(self, query_mock):
@@ -140,7 +142,7 @@ class RFC2136ClientTest(unittest.TestCase):
         self.rfc2136_client._find_domain = mock.MagicMock(return_value="example.com")
 
         with pytest.raises(errors.PluginError):
-            self.rfc2136_client.add_txt_record("bar", "baz", 42)
+            self.rfc2136_client.add_txt_records([TXTRecord(name="bar", content="baz", ttl=42)])
 
     @mock.patch("dns.query.tcp")
     def test_del_txt_record(self, query_mock):
@@ -148,7 +150,7 @@ class RFC2136ClientTest(unittest.TestCase):
         # _find_domain | pylint: disable=protected-access
         self.rfc2136_client._find_domain = mock.MagicMock(return_value="example.com")
 
-        self.rfc2136_client.del_txt_record("bar", "baz")
+        self.rfc2136_client.del_txt_records([TXTRecord(name="bar", content="baz")])
 
         query_mock.assert_called_with(mock.ANY, SERVER, TIMEOUT, PORT)
         assert 'bar. 0 NONE TXT "baz"' in str(query_mock.call_args[0][0])
@@ -160,7 +162,7 @@ class RFC2136ClientTest(unittest.TestCase):
         self.rfc2136_client._find_domain = mock.MagicMock(return_value="example.com")
 
         with pytest.raises(errors.PluginError):
-            self.rfc2136_client.del_txt_record("bar", "baz")
+            self.rfc2136_client.del_txt_records([TXTRecord(name="bar", content="baz")])
 
     @mock.patch("dns.query.tcp")
     def test_del_txt_record_server_error(self, query_mock):
@@ -169,9 +171,12 @@ class RFC2136ClientTest(unittest.TestCase):
         self.rfc2136_client._find_domain = mock.MagicMock(return_value="example.com")
 
         with pytest.raises(errors.PluginError):
-            self.rfc2136_client.del_txt_record("bar", "baz")
+            self.rfc2136_client.del_txt_records([TXTRecord(name="bar", content="baz")])
 
     def test_find_domain(self):
+        import certbot_dns_rfc2136._internal.dns_rfc2136
+        certbot_dns_rfc2136._internal.dns_rfc2136.SOA_CACHE = {}
+
         # _query_soa | pylint: disable=protected-access
         self.rfc2136_client._query_soa = mock.MagicMock(side_effect=[False, False, True])
 
@@ -181,6 +186,9 @@ class RFC2136ClientTest(unittest.TestCase):
         assert domain == DOMAIN
 
     def test_find_domain_wraps_errors(self):
+        import certbot_dns_rfc2136._internal.dns_rfc2136
+        certbot_dns_rfc2136._internal.dns_rfc2136.SOA_CACHE = {}
+
         # _query_soa | pylint: disable=protected-access
         self.rfc2136_client._query_soa = mock.MagicMock(return_value=False)
 

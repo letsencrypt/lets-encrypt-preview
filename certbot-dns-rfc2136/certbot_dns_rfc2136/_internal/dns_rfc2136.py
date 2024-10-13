@@ -1,9 +1,14 @@
 """DNS Authenticator using RFC 2136 Dynamic Updates."""
 import logging
+from time import sleep
 from typing import Any
 from typing import Callable
+from typing import List
+from typing import Iterable
 from typing import cast
 from typing import Optional
+from typing import Dict
+from collections import namedtuple
 
 import dns.flags
 import dns.message
@@ -15,7 +20,10 @@ import dns.tsig
 import dns.tsigkeyring
 import dns.update
 
+from acme import challenges
 from certbot import errors
+from certbot import achallenges
+from certbot.display import util as display_util
 from certbot.plugins import dns_common
 from certbot.plugins.dns_common import CredentialsConfiguration
 from certbot.util import is_ipaddress
@@ -23,6 +31,9 @@ from certbot.util import is_ipaddress
 logger = logging.getLogger(__name__)
 
 DEFAULT_NETWORK_TIMEOUT = 45
+
+
+TXTRecord = namedtuple('TXTRecord', ['name', 'content', 'ttl'], defaults=[-1])
 
 
 class Authenticator(dns_common.DNSAuthenticator):
@@ -42,7 +53,7 @@ class Authenticator(dns_common.DNSAuthenticator):
 
     PORT = 53
 
-    description = 'Obtain certificates using a DNS TXT record (if you are using BIND for DNS).'
+    description = 'Obtain certificates using a DNS TXT record with RFC2136 UPDATE.'
     ttl = 120
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -82,10 +93,36 @@ class Authenticator(dns_common.DNSAuthenticator):
         )
 
     def _perform(self, _domain: str, validation_name: str, validation: str) -> None:
-        self._get_rfc2136_client().add_txt_record(validation_name, validation, self.ttl)
+        assert False
+    def perform(self, achalls: List[achallenges.AnnotatedChallenge]
+                ) -> List[challenges.ChallengeResponse]: # pylint: disable=missing-function-docstring
+        self._setup_credentials()
+
+        self._attempt_cleanup = True
+
+        self._get_rfc2136_client().add_txt_records(TXTRecord(
+                name=achall.validation_domain_name(achall.domain),
+                content=achall.validation(achall.account_key),
+                ttl=self.ttl
+            ) for achall in achalls)
+
+        # DNS updates take time to propagate and checking to see if the update has occurred is not
+        # reliable (the machine this code is running on might be able to see an update before
+        # the ACME server). So: we sleep for a short amount of time we believe to be long enough.
+        display_util.notify("Waiting %d seconds for DNS changes to propagate" %
+                    self.conf('propagation-seconds'))
+        sleep(self.conf('propagation-seconds'))
+
+        return [achall.response(achall.account_key) for achall in achalls]
 
     def _cleanup(self, _domain: str, validation_name: str, validation: str) -> None:
-        self._get_rfc2136_client().del_txt_record(validation_name, validation)
+        assert False
+    def cleanup(self, achalls: List[achallenges.AnnotatedChallenge]) -> None:  # pylint: disable=missing-function-docstring
+        if self._attempt_cleanup:
+            self._get_rfc2136_client().del_txt_records(TXTRecord(
+                    name=achall.validation_domain_name(achall.domain),
+                    content=achall.validation(achall.account_key)
+                ) for achall in achalls)
 
     def _get_rfc2136_client(self) -> "_RFC2136Client":
         if not self.credentials:  # pragma: no cover
@@ -100,6 +137,7 @@ class Authenticator(dns_common.DNSAuthenticator):
                               (self.credentials.conf('sign_query') or '').upper() == "TRUE")
 
 
+SOA_CACHE: Dict[str, bool] = {}
 class _RFC2136Client:
     """
     Encapsulates all communication with the target DNS server.
@@ -116,27 +154,44 @@ class _RFC2136Client:
         self.sign_query = sign_query
         self._default_timeout = timeout
 
-    def add_txt_record(self, record_name: str, record_content: str, record_ttl: int) -> None:
+    def _group_by_domain(self, records: Iterable[TXTRecord]) -> Dict[str, List[TXTRecord]]:
         """
-        Add a TXT record using the supplied information.
+        Group records to add/delete by the zone to which they belong for batching.
+        """
 
-        :param str record_name: The record name (typically beginning with '_acme-challenge.').
-        :param str record_content: The record content (typically the challenge validation).
-        :param int record_ttl: The record TTL (number of seconds that the record may be cached).
+        by_domain: Dict[str, List[TXTRecord]] = {}
+        for record in records:
+            domain = self._find_domain(record.name)
+            try:
+                by_domain[domain].append(record)
+            except KeyError:
+                by_domain[domain] = [record]
+        return by_domain
+
+    def add_txt_records(self, records: Iterable[TXTRecord]) -> None:
+        """
+        Add TXT records using the supplied information.
+
+        :param str records[].name: The record name (typically beginning with '_acme-challenge.').
+        :param str records[].content: The record content (typically the challenge validation).
+        :param int records[].ttl: The record TTL (number of seconds that the record may be cached).
         :raises certbot.errors.PluginError: if an error occurs communicating with the DNS server
         """
 
-        domain = self._find_domain(record_name)
+        for domain, drecords in self._group_by_domain(records).items():
+            self._add_txt_records(domain, drecords)
 
-        n = dns.name.from_text(record_name)
+    def _add_txt_records(self, domain: str, records: Iterable[TXTRecord]) -> None:
         o = dns.name.from_text(domain)
-        rel = n.relativize(o)
-
         update = dns.update.Update(
             domain,
             keyring=self.keyring,
             keyalgorithm=self.algorithm)
-        update.add(rel, record_ttl, dns.rdatatype.TXT, record_content)
+
+        for record in records:
+            n = dns.name.from_text(record.name)
+            rel = n.relativize(o)
+            update.add(rel, record.ttl, dns.rdatatype.TXT, record.content)
 
         try:
             response = dns.query.tcp(update, self.server, self._default_timeout, self.port)
@@ -146,32 +201,35 @@ class _RFC2136Client:
         rcode = response.rcode()
 
         if rcode == dns.rcode.NOERROR:
-            logger.debug('Successfully added TXT record %s', record_name)
+            logger.debug('Successfully added TXT records %s', ', '.join(r.name for r in records))
         else:
             raise errors.PluginError('Received response from server: {0}'
                                      .format(dns.rcode.to_text(rcode)))
 
-    def del_txt_record(self, record_name: str, record_content: str) -> None:
+
+    def del_txt_records(self, records: Iterable[TXTRecord]) -> None:
         """
         Delete a TXT record using the supplied information.
 
-        :param str record_name: The record name (typically beginning with '_acme-challenge.').
-        :param str record_content: The record content (typically the challenge validation).
-        :param int record_ttl: The record TTL (number of seconds that the record may be cached).
+        :param str records[].name: The record name (typically beginning with '_acme-challenge.').
+        :param str records[].content: The record content (typically the challenge validation).
         :raises certbot.errors.PluginError: if an error occurs communicating with the DNS server
         """
 
-        domain = self._find_domain(record_name)
+        for domain, drecords in self._group_by_domain(records).items():
+            self._del_txt_records(domain, drecords)
 
-        n = dns.name.from_text(record_name)
+    def _del_txt_records(self, domain: str, records: Iterable[TXTRecord]) -> None:
         o = dns.name.from_text(domain)
-        rel = n.relativize(o)
-
         update = dns.update.Update(
             domain,
             keyring=self.keyring,
             keyalgorithm=self.algorithm)
-        update.delete(rel, dns.rdatatype.TXT, record_content)
+
+        for record in records:
+            n = dns.name.from_text(record.name)
+            rel = n.relativize(o)
+            update.delete(rel, dns.rdatatype.TXT, record.content)
 
         try:
             response = dns.query.tcp(update, self.server, self._default_timeout, self.port)
@@ -181,7 +239,7 @@ class _RFC2136Client:
         rcode = response.rcode()
 
         if rcode == dns.rcode.NOERROR:
-            logger.debug('Successfully deleted TXT record %s', record_name)
+            logger.debug('Successfully deleted TXT record %s', ', '.join(r.name for r in records))
         else:
             raise errors.PluginError('Received response from server: {0}'
                                      .format(dns.rcode.to_text(rcode)))
@@ -200,8 +258,14 @@ class _RFC2136Client:
 
         # Loop through until we find an authoritative SOA record
         for guess in domain_name_guesses:
-            if self._query_soa(guess):
-                return guess
+            try:
+                if SOA_CACHE[guess]:
+                    return guess
+            except KeyError:
+                if self._query_soa(guess):
+                    SOA_CACHE[guess] = True
+                    return guess
+                SOA_CACHE[guess] = False
 
         raise errors.PluginError('Unable to determine base domain for {0} using names: {1}.'
                                  .format(record_name, domain_name_guesses))

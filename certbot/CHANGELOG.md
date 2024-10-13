@@ -94,6 +94,8 @@ More details about these changes can be found on our GitHub repo.
 ### Changed
 
 * Support for Python 3.7 was removed.
+* dns-rfc2136 now uses one UPDATE request per zone
+* dns-rfc2136 now caches the results of its SOA discovery walks within a run
 
 ### Fixed
 
