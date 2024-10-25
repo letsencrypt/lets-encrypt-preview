@@ -27,8 +27,6 @@ Workflow:
 """
 from contextlib import contextmanager
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import rsa
 import josepy as jose
 import OpenSSL
 
@@ -155,10 +153,9 @@ def example_http():
     """
     # Create account key
 
-    acc_key = jose.JWKRSA(
-        key=rsa.generate_private_key(public_exponent=65537,
-                                     key_size=ACC_KEY_BITS,
-                                     backend=default_backend()))
+    accpkey = OpenSSL.crypto.PKey()
+    accpkey.generate_key(OpenSSL.crypto.TYPE_RSA, ACC_KEY_BITS)
+    acc_key = jose.JWKRSA(key=accpkey.to_cryptography_key())
 
     # Register account and accept TOS
 
