@@ -63,7 +63,8 @@ credentials <https://boto3.readthedocs.io/en/latest/guide/configuration.html
 * Using the ``AWS_ACCESS_KEY_ID`` and ``AWS_SECRET_ACCESS_KEY`` environment
   variables.
 * Using a credentials configuration file at the default location,
-  ``~/.aws/config``.
+  ``~/.aws/credentials``. If you're running on sudo, the credentials
+  will be picked up from the root home.
 * Using a credentials configuration file at a path supplied using the
   ``AWS_CONFIG_FILE`` environment variable.
 
