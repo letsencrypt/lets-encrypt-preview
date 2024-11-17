@@ -12,6 +12,7 @@ Certbot adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 * Updated our Docker images to be based on Alpine Linux 3.20.
+* Removed support for Linode API v3 which was sunset at the end of July 203.
 
 ### Fixed
 
