@@ -40,7 +40,6 @@ Tokens page (legacy) <https://manager.linode.com/profile/api>`_ or `Applications
 
    # Linode API credentials used by Certbot
    dns_linode_key = 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ64
-   dns_linode_version = 4
 
 The path to this file can be provided interactively or using the
 ``--dns-linode-credentials`` command-line argument. Certbot records the path

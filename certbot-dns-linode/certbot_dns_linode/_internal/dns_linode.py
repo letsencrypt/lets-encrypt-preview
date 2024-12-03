@@ -12,7 +12,6 @@ from certbot.plugins import dns_common_lexicon
 
 logger = logging.getLogger(__name__)
 
-API_KEY_URL = 'https://manager.linode.com/profile/api'
 API_KEY_URL_V4 = 'https://cloud.linode.com/profile/tokens'
 
 
@@ -28,7 +27,7 @@ class Authenticator(dns_common_lexicon.LexiconDNSAuthenticator):
         super().__init__(*args, **kwargs)
         self._add_provider_option('key',
                                   'API key for Linode account, '
-                                  f'obtained from {API_KEY_URL} or {API_KEY_URL_V4}',
+                                  f'obtained from {API_KEY_URL_V4}',
                                   'auth_token')
 
     @classmethod
@@ -46,26 +45,7 @@ class Authenticator(dns_common_lexicon.LexiconDNSAuthenticator):
         if not hasattr(self, '_credentials'):  # pragma: no cover
             self._setup_credentials()
 
-        api_key = cast(str, self._credentials.conf('key'))
-        api_version: Optional[Union[str, int]] = self._credentials.conf('version')
-
-        if not api_version:
-            api_version = 3
-
-            # Match for v4 api key
-            regex_v4 = re.compile('^[0-9a-f]{64}$')
-            regex_match = regex_v4.match(api_key)
-            if regex_match:
-                api_version = 4
-        else:
-            api_version = int(api_version)
-
-        if api_version == 3:
-            return 'linode'
-        elif api_version == 4:
-            return 'linode4'
-
-        raise errors.PluginError(f'Invalid api version specified: {api_version}. (Supported: 3, 4)')
+        return 'linode4'
 
     def _setup_credentials(self) -> None:
         self._credentials = self._configure_credentials(
