@@ -43,7 +43,6 @@ install_requires = [
     # This dependency needs to be added using environment markers to avoid its
     # installation on Linux.
     'pywin32>=300 ; sys_platform == "win32"',
-    'setuptools>=41.6.0',
 ]
 
 dev_extras = [
