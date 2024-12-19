@@ -1365,7 +1365,7 @@ def revoke(config: configuration.NamespaceConfig,
         acme = client.acme_from_config_key(config, acc.key, acc.regr)
 
     with open(config.cert_path, 'rb') as f:
-        cert = crypto_util.pyopenssl_load_certificate(f.read())[0]
+        cert = crypto_util.cryptography_load_certificate(f.read())[0]
     logger.debug("Reason code for revocation: %s", config.reason)
     try:
         acme.revoke(jose.ComparableX509(cert), config.reason)

@@ -10,11 +10,13 @@ import logging
 import re
 from typing import Callable
 from typing import List
+from typing import Literal
 from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
+import warnings
 
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
@@ -51,6 +53,16 @@ if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PublicKey
 
 logger = logging.getLogger(__name__)
+
+def warn_future(message: str) -> None:
+    # emit a warning for to-be-deprecated functions
+    warnings.warn(message, FutureWarning, stacklevel=2)
+
+
+class FILETYPE(object):
+    # compat for crypto's FILETYPE_PEM and FILETYPE_ANS1
+    PEM = 1
+    ANS1 = 2
 
 
 # High level functions
@@ -396,7 +408,11 @@ def pyopenssl_load_certificate(data: bytes) -> Tuple[crypto.X509, int]:
     :raises errors.Error:
 
     """
-
+    warn_future(
+        "`pyopenssl_load_certificate` is deprecated and will be removed in a "
+        "future release. use the `cryptography_load_certificate` function "
+        "instead."
+    )
     openssl_errors = []
 
     for file_type in (crypto.FILETYPE_PEM, crypto.FILETYPE_ASN1):
@@ -406,6 +422,31 @@ def pyopenssl_load_certificate(data: bytes) -> Tuple[crypto.X509, int]:
             openssl_errors.append(error)
     raise errors.Error("Unable to load: {0}".format(",".join(
         str(error) for error in openssl_errors)))
+
+
+def cryptography_load_certificate(
+    data: bytes,
+) -> Tuple[x509.Certificate, Literal[FILETYPE.PEM, FILETYPE.ANS1]]:
+    """Load PEM/DER certificate.
+
+    :raises errors.Error:
+
+    """
+    _errors = []
+    try:
+        cert = x509.load_pem_x509_certificate(data)
+        return (cert, FILETYPE.PEM)
+    except Exception as exc:
+        _errors.append(exc)
+
+    try:
+        cert = x509.load_der_x509_certificate(data)
+        return (cert, FILETYPE.ANS1)
+    except Exception as exc:
+        _errors.append(exc)
+
+    raise errors.Error("Unable to load: {0}".format(",".join(
+        str(error) for error in _errors)))
 
 
 def _load_cert_or_req(cert_or_req_str: bytes,
