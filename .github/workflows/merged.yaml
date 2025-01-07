@@ -1,14 +1,13 @@
 name: Merge Event
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
 
 jobs:
   if_merged:
-    # Forked repos can not access Mattermost secret.
-    if: github.event.pull_request.merged == true && !github.event.pull_request.head.repo.fork
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - uses: mattermost/action-mattermost-notify@master
