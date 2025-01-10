@@ -30,9 +30,9 @@ Credentials
 -----------
 
 Use of this plugin requires a configuration file containing Linode API
-credentials, obtained from your Linode account's `Applications & API
-Tokens page (legacy) <https://manager.linode.com/profile/api>`_ or `Applications
-& API Tokens page (new) <https://cloud.linode.com/profile/tokens>`_.
+credentials, obtained from your Linode account's `Applications & API Tokens
+page <https://cloud.linode.com/profile/tokens>`_. The credentials need to
+have Read access to the Account scope, and Read/Write access to Domains.
 
 .. code-block:: ini
    :name: credentials.ini
