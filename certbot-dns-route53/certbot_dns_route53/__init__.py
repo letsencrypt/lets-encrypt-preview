@@ -8,6 +8,14 @@ subsequently removing, TXT records using the Amazon Web Services Route 53 API.
    `certbot.eff.org <https://certbot.eff.org/instructions#wildcard>`_, choosing your system and
    selecting the Wildcard tab.
 
+Named Arguments
+---------------
+
+========================================  =====================================
+``--dns-route53-credentials``             Load AWS credentials from specified
+                                          file. (Default: None)
+========================================  =====================================
+
 Credentials
 -----------
 Use of this plugin requires a configuration file containing Amazon Web Sevices
@@ -55,10 +63,23 @@ the required permissions <https://docs.aws.amazon.com/Route53/latest
 
 The `access keys <https://docs.aws.amazon.com/general/latest/gr
 /aws-sec-cred-types.html#access-keys-and-secret-access-keys>`_ for an account
-with these permissions must be supplied in one of the following ways, which are
-discussed in more detail in the Boto3 library's documentation about `configuring
-credentials <https://boto3.readthedocs.io/en/latest/guide/configuration.html
-#best-practices-for-configuring-credentials>`_.
+with these permissions should be supplied by setting the
+``--dns-route53-credentials`` option to a credentials file using standard format:
+
+.. code-block:: ini
+   :name: config.ini
+   :caption: Example AWS credentials config file:
+
+   [default]
+   aws_access_key_id=AKIAIOSFODNN7EXAMPLE
+   aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+**It is recommended to set ``--dns-route53-credentials``.** Otherwise Boto3 will
+attempt to obtain credentials using files at ``$HOME`` or from
+environment variables, which can differ at renewals. The following sources will
+be tried (this is discussed in more detail in the Boto3 library's documentation
+about `configuring credentials <https://boto3.readthedocs.io/en/latest
+/guide/configuration.html#best-practices-for-configuring-credentials>`_):
 
 * Using the ``AWS_ACCESS_KEY_ID`` and ``AWS_SECRET_ACCESS_KEY`` environment
   variables.
@@ -66,14 +87,6 @@ credentials <https://boto3.readthedocs.io/en/latest/guide/configuration.html
   ``~/.aws/config``.
 * Using a credentials configuration file at a path supplied using the
   ``AWS_CONFIG_FILE`` environment variable.
-
-.. code-block:: ini
-   :name: config.ini
-   :caption: Example credentials config file:
-
-   [default]
-   aws_access_key_id=AKIAIOSFODNN7EXAMPLE
-   aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 
 .. caution::
    You should protect these API credentials as you would a password. Users who
