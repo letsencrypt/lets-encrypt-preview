@@ -1,6 +1,5 @@
 """Tests for certbot_nginx._internal.http_01"""
 import sys
-import unittest
 from unittest import mock
 
 import josepy as jose

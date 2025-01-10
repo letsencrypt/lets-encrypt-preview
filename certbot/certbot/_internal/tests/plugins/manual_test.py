@@ -1,7 +1,6 @@
 """Tests for certbot._internal.plugins.manual"""
 import sys
 import textwrap
-import unittest
 from unittest import mock
 
 import pytest

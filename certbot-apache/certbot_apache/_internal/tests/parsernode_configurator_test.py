@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover
 class ConfiguratorParserNodeTest(util.ApacheTest):  # pylint: disable=too-many-public-methods
     """Test AugeasParserNode using available test configurations"""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         super().setUp()
 
         self.config = util.get_apache_configurator(

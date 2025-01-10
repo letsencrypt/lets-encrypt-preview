@@ -10,12 +10,10 @@ from multiprocessing.managers import SyncManager
 import os
 from os.path import basename
 from os.path import dirname
-from os.path import exists
 from os.path import join
 from os.path import realpath
 import random
 import re
-import shutil
 import string
 import subprocess
 import sys

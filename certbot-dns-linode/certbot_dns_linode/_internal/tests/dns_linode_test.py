@@ -1,7 +1,6 @@
 """Tests for certbot_dns_linode._internal.dns_linode."""
 
 import sys
-import unittest
 from unittest import mock
 
 import pytest

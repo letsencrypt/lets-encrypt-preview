@@ -1,6 +1,5 @@
 """Test for certbot_apache._internal.configurator for Gentoo overrides"""
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -43,7 +42,7 @@ def get_vh_truth(temp_dir, config_name):
 class MultipleVhostsTestGentoo(util.ApacheTest):
     """Multiple vhost tests for non-debian distro"""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         test_dir = "gentoo_apache/apache"
         config_root = "gentoo_apache/apache/apache2"
         vhost_root = "gentoo_apache/apache/apache2/vhosts.d"

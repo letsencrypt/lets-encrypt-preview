@@ -1,7 +1,6 @@
 """Tests for acme.jose shim."""
 import importlib
 import sys
-import unittest
 
 import pytest
 

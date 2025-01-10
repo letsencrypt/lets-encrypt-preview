@@ -1,6 +1,5 @@
 """Test for certbot_apache._internal.configurator for Fedora 29+ overrides"""
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -41,7 +40,7 @@ class FedoraRestartTest(util.ApacheTest):
 
     # TODO: eventually, these tests should have a dedicated configuration instead
     #  of reusing the ones from centos_test
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         test_dir = "centos7_apache/apache"
         config_root = "centos7_apache/apache/httpd"
         vhost_root = "centos7_apache/apache/httpd/conf.d"
@@ -83,7 +82,7 @@ class FedoraRestartTest(util.ApacheTest):
 class MultipleVhostsTestFedora(util.ApacheTest):
     """Multiple vhost tests for CentOS / RHEL family of distros"""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         test_dir = "centos7_apache/apache"
         config_root = "centos7_apache/apache/httpd"
         vhost_root = "centos7_apache/apache/httpd/conf.d"

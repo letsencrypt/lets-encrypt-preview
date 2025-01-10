@@ -2,8 +2,6 @@
 This compat module handles various platform specific calls that do not fall into one
 particular category.
 """
-from __future__ import absolute_import
-
 import logging
 import select
 import subprocess

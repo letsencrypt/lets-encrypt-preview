@@ -1,7 +1,6 @@
 """Tests for certbot_apache._internal.parser."""
 import shutil
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -14,7 +13,7 @@ from certbot_apache._internal.tests import util
 class BasicParserTest(util.ParserTest):
     """Apache Parser Test."""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         super().setUp()
 
     def tearDown(self):

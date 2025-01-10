@@ -1,7 +1,6 @@
 """Tests for certbot._internal.cli."""
 import argparse
 import copy
-from importlib import reload as reload_module
 import io
 import sys
 import tempfile
@@ -446,7 +445,7 @@ class ParseTest(unittest.TestCase):
         assert_set_by_user_with_value(namespace, 'renew_hook', value)
 
     def test_renew_hook_conflict(self):
-        with mock.patch("certbot._internal.cli.sys.stderr"):
+        with mock.patch("sys.stderr"):
             with pytest.raises(SystemExit):
                 self.parse("--deploy-hook foo --renew-hook bar".split())
 

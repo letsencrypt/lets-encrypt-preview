@@ -10,9 +10,6 @@
 # We should try to remember to keep their repo updated if we make any changes
 # to this script which may break things for them.
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import subprocess
 import sys

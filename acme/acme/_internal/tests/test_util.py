@@ -5,7 +5,6 @@
 """
 import importlib.resources
 import os
-import sys
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization

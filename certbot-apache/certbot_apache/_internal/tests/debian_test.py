@@ -1,7 +1,6 @@
 """Test for certbot_apache._internal.configurator for Debian overrides"""
 import shutil
 import sys
-import unittest
 from unittest import mock
 
 import pytest

@@ -1,6 +1,5 @@
 """Tests for renewal updater interfaces"""
 import sys
-import unittest
 from unittest import mock
 
 import pytest

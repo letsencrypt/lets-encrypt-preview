@@ -1,10 +1,8 @@
 """Tests for acme.messages."""
-import contextlib
 import sys
 from typing import Dict
 import unittest
 from unittest import mock
-import warnings
 
 import josepy as jose
 import pytest
