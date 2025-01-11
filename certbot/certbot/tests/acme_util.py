@@ -12,7 +12,7 @@ from certbot._internal import auth_handler
 from certbot.tests import util
 
 JWK = jose.JWK.load(util.load_vector('rsa512_key.pem'))
-KEY = util.load_rsa_private_key('rsa512_key.pem')
+KEY = util.load_jose_rsa_private_key_pem('rsa512_key.pem')
 
 # Challenges
 HTTP01 = challenges.HTTP01(

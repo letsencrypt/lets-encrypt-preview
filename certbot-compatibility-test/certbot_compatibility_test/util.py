@@ -14,8 +14,8 @@ from certbot_compatibility_test import errors
 
 _KEY_BASE = "rsa2048_key.pem"
 KEY_PATH = test_util.vector_path(_KEY_BASE)
-KEY = test_util.load_pyopenssl_private_key(_KEY_BASE)
-JWK = jose.JWKRSA(key=test_util.load_rsa_private_key(_KEY_BASE))
+KEY = test_util.load_rsa_private_key_pem(_KEY_BASE)
+JWK = jose.JWKRSA(key=test_util.load_jose_rsa_private_key_pem(_KEY_BASE))
 IP_REGEX = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 
 

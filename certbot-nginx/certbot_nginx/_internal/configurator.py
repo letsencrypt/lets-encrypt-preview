@@ -22,7 +22,8 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 
-import OpenSSL
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from acme import challenges
 from acme import crypto_util as acme_crypto_util
@@ -696,14 +697,16 @@ class NginxConfigurator(common.Configurator):
         # TODO: generate only once
         tmp_dir = os.path.join(self.config.work_dir, "snakeoil")
         le_key = crypto_util.generate_key(
-            key_size=2048, key_dir=tmp_dir, keyname="key.pem",
+            key_type='rsa', key_size=2048, key_dir=tmp_dir, keyname="key.pem",
             strict_permissions=self.config.strict_permissions)
         assert le_key.file is not None
-        key = OpenSSL.crypto.load_privatekey(
-            OpenSSL.crypto.FILETYPE_PEM, le_key.pem)
-        cert = acme_crypto_util.gen_ss_cert(key, domains=[socket.gethostname()])
-        cert_pem = OpenSSL.crypto.dump_certificate(
-            OpenSSL.crypto.FILETYPE_PEM, cert)
+        cryptography_key = serialization.load_pem_private_key(le_key.pem, password=None)
+        assert isinstance(cryptography_key, rsa.RSAPrivateKey)
+        cert = acme_crypto_util.make_self_signed_cert(
+            cryptography_key,
+            domains=[socket.gethostname()]
+        )
+        cert_pem = cert.public_bytes(serialization.Encoding.PEM)
         cert_file, cert_path = util.unique_file(
             os.path.join(tmp_dir, "cert.pem"), mode="wb")
         with cert_file:

@@ -1,6 +1,5 @@
 """ACME Identifier Validation Challenges."""
 import abc
-import codecs
 import functools
 import hashlib
 import logging
@@ -17,6 +16,7 @@ from typing import Union
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
+from cryptography import x509
 import josepy as jose
 from OpenSSL import crypto
 from OpenSSL import SSL
@@ -436,12 +436,22 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
             key = crypto.PKey()
             key.generate_key(crypto.TYPE_RSA, bits)
 
-        der_value = b"DER:" + codecs.encode(self.h, 'hex')
-        acme_extension = crypto.X509Extension(self.ID_PE_ACME_IDENTIFIER_V1,
-                                              critical=True, value=der_value)
+        oid = x509.ObjectIdentifier(self.ID_PE_ACME_IDENTIFIER_V1.decode())
+        acme_extension = x509.Extension(
+            oid,
+            critical=True,
+            value=x509.UnrecognizedExtension(oid, self.h)
+        )
 
-        return crypto_util.gen_ss_cert(key, [domain], force_san=True,
-                                       extensions=[acme_extension]), key
+        cryptography_key = key.to_cryptography_key()
+        assert isinstance(cryptography_key, crypto_util.CertificateIssuerPrivateKeyTypesTpl)
+        cert = crypto_util.make_self_signed_cert(
+            cryptography_key,
+            [domain],
+            force_san=True,
+            extensions=[acme_extension]
+        )
+        return crypto.X509.from_cryptography(cert), key
 
     def probe_cert(self, domain: str, host: Optional[str] = None,
                    port: Optional[int] = None) -> crypto.X509:

@@ -2,6 +2,7 @@
 import binascii
 import contextlib
 import enum
+from datetime import datetime, timedelta
 import ipaddress
 import logging
 import os
@@ -25,6 +26,7 @@ from OpenSSL import crypto
 from OpenSSL import SSL
 
 from acme import errors
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -240,6 +242,35 @@ def probe_sni(name: bytes, host: bytes, port: int = 443, timeout: int = 300,  # 
     return cert
 
 
+# Annoyingly, we can't directly use cryptography's equivalent Union[] type for
+# our type signatures since they're only public API in 40.0.x+, which is too new
+# for some Certbot # distribution channels. Once we bump our oldest cryptography
+# version past 40.0.x, usage of this type can be replaced with:
+# cryptography.hazmat.primitives.asymmetric.types.CertificateIssuerPrivateKeyTypes
+CertificateIssuerPrivateKeyTypes = Union[
+    dsa.DSAPrivateKey,
+    rsa.RSAPrivateKey,
+    ec.EllipticCurvePrivateKey,
+    ed25519.Ed25519PrivateKey,
+    ed448.Ed448PrivateKey,
+]
+# Even *more* annoyingly, due to a mypy bug, we can't use Union[] types in
+# isinstance expressions without causing false mypy errors. So we have to
+# recreate the type collection as a tuple here. And no, typing.get_args doesn't
+# work due to another mypy bug.
+#
+# mypy issues:
+#  * https://github.com/python/mypy/issues/17680
+#  * https://github.com/python/mypy/issues/15106
+CertificateIssuerPrivateKeyTypesTpl = (
+    dsa.DSAPrivateKey,
+    rsa.RSAPrivateKey,
+    ec.EllipticCurvePrivateKey,
+    ed25519.Ed25519PrivateKey,
+    ed448.Ed448PrivateKey,
+)
+
+
 def make_csr(
     private_key_pem: bytes,
     domains: Optional[Union[Set[str], List[str]]] = None,
@@ -262,18 +293,7 @@ def make_csr(
 
     """
     private_key = serialization.load_pem_private_key(private_key_pem, password=None)
-    # There are a few things that aren't valid for x509 signing. mypy
-    # complains if we don't check.
-    if not isinstance(
-        private_key,
-        (
-            dsa.DSAPrivateKey,
-            rsa.RSAPrivateKey,
-            ec.EllipticCurvePrivateKey,
-            ed25519.Ed25519PrivateKey,
-            ed448.Ed448PrivateKey,
-        ),
-    ):
+    if not isinstance(private_key, CertificateIssuerPrivateKeyTypesTpl):
         raise ValueError(f"Invalid private key type: {type(private_key)}")
     if domains is None:
         domains = []
@@ -371,6 +391,82 @@ def _pyopenssl_cert_or_req_san(cert_or_req: Union[crypto.X509, crypto.X509Req]) 
     return san_ext.value.get_values_for_type(x509.DNSName)
 
 
+# Helper function that can be mocked in unit tests
+def _now() -> datetime:
+    return datetime.utcnow()
+
+
+def make_self_signed_cert(private_key: CertificateIssuerPrivateKeyTypes,
+                          domains: Optional[List[str]] = None,
+                          not_before: Optional[int] = None,
+                          validity: int = (7 * 24 * 60 * 60), force_san: bool = True,
+                          extensions: Optional[List[x509.Extension]] = None,
+                          ips: Optional[List[Union[ipaddress.IPv4Address,
+                                                   ipaddress.IPv6Address]]] = None
+                          ) -> x509.Certificate:
+    """Generate new self-signed certificate.
+    :param buffer private_key_pem: Private key, in PEM PKCS#8 format.
+    :type domains: `list` of `str`
+    :param int not_before: A POSIX UTC timestamp after which the cert is valid
+    :param validity: Time (in seconds) for which the cert will be valid
+    :param buffer private_key_pem: One of `CertificateIssuerPrivateKeyTypes`
+    :param bool force_san:
+    :param extensions: List of additional extensions to include in the cert.
+    :type extensions: `list` of `x509.Extension[x509.ExtensionType]`
+    :type ips: `list` of (`ipaddress.IPv4Address` or `ipaddress.IPv6Address`)
+    If more than one domain is provided, all of the domains are put into
+    ``subjectAltName`` X.509 extension and first domain is set as the
+    subject CN. If only one domain is provided no ``subjectAltName``
+    extension is used, unless `force_san` is ``True``.
+    """
+    assert domains or ips, "Must provide one or more hostnames or IPs for the cert."
+
+    builder = x509.CertificateBuilder()
+    builder = builder.serial_number(x509.random_serial_number())
+
+    if extensions is not None:
+        for ext in extensions:
+            builder = builder.add_extension(ext.value, ext.critical)
+    if domains is None:
+        domains = []
+    if ips is None:
+        ips = []
+    builder = builder.add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+
+    name_attrs = []
+    if len(domains) > 0:
+        name_attrs.append(x509.NameAttribute(
+            x509.OID_COMMON_NAME,
+            domains[0]
+        ))
+
+    builder = builder.subject_name(x509.Name(name_attrs))
+    builder = builder.issuer_name(x509.Name(name_attrs))
+
+    sanlist: List[x509.GeneralName] = []
+    for address in domains:
+        sanlist.append(x509.DNSName(address))
+    for ip in ips:
+        sanlist.append(x509.IPAddress(ip))
+    if force_san or len(domains) > 1 or len(ips) > 0:
+        builder = builder.add_extension(
+            x509.SubjectAlternativeName(sanlist),
+            critical=False
+        )
+
+    if not_before is None:
+        not_before_datetime = _now()
+    else:
+        not_before_datetime = datetime.fromtimestamp(not_before)
+    not_valid_after = not_before_datetime + timedelta(seconds=validity)
+    builder = builder.not_valid_before(not_before_datetime)
+    builder = builder.not_valid_after(not_valid_after)
+
+    public_key = private_key.public_key()
+    builder = builder.public_key(public_key)
+    return builder.sign(private_key, hashes.SHA256())
+
+
 def gen_ss_cert(key: crypto.PKey, domains: Optional[List[str]] = None,
                 not_before: Optional[int] = None,
                 validity: int = (7 * 24 * 60 * 60), force_san: bool = True,
@@ -391,7 +487,14 @@ def gen_ss_cert(key: crypto.PKey, domains: Optional[List[str]] = None,
     subject CN. If only one domain is provided no ``subjectAltName``
     extension is used, unless `force_san` is ``True``.
 
+    .. deprecated: 2.10.0
     """
+    warnings.warn(
+        "acme.crypto_util.gen_ss_cert is deprecated and will be removed in the "
+        "next major release of Certbot. Please use "
+        "acme.crypto_util.make_self_signed_cert instead.", DeprecationWarning,
+        stacklevel=2
+    )
     assert domains or ips, "Must provide one or more hostnames or IPs for the cert."
 
     cert = crypto.X509()
