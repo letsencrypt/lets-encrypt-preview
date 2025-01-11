@@ -2,8 +2,8 @@ name: Weekly Github Update
 
 on:
   schedule:
-    # Every week on Thursday @ 13:00
-    - cron: "0 13 * * 4"
+    # Every week on Thursday @ 10:00
+    - cron: "0 10 * * 4"
   workflow_dispatch:
 jobs:
   send-mattermost-message:
@@ -13,15 +13,13 @@ jobs:
     - name: Create Mattermost Message
       run: |
         DATE=$(date --date="7 days ago" +"%Y-%m-%d")
-        echo "MERGED_URL=https://github.com/pulls?q=merged%3A%3E${DATE}+org%3Acertbot" >> $GITHUB_ENV
-        echo "UPDATED_URL=https://github.com/pulls?q=updated%3A%3E${DATE}+org%3Acertbot" >> $GITHUB_ENV
+        echo "ASSIGNED_PRS=https://github.com/pulls?q=is%3Apr+is%3Aopen+updated%3A%3E%3D${DATE}+assignee%3A*+user%3Acertbot" >> $GITHUB_ENV
+        echo "UPDATED_URL=https://github.com/issues?q=is%3Aissue+is%3Aopen+sort%3Acomments-desc+updated%3A%3E%3D${DATE}+user%3Acertbot" >> $GITHUB_ENV
     - uses: mattermost/action-mattermost-notify@master
       with:
         MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
         MATTERMOST_CHANNEL: private-certbot
         TEXT: |
-          ## Updates Across Certbot Repos
-          - Certbot team members SHOULD look at: [link](${{ env.MERGED_URL }})
-          - Certbot team members MAY also want to look at: [link](${{ env.UPDATED_URL }})
-          - Want to Discuss something today? Place it [here](https://docs.google.com/document/d/17YMUbtC1yg6MfiTMwT8zVm9LmO-cuGVBom0qFn8XJBM/edit?usp=sharing) and we can meet today on Zoom.
-          - The key words SHOULD and MAY in this message are to be interpreted as described in [RFC 8147](https://www.rfc-editor.org/rfc/rfc8174).
+          ## Updates In the Past Week
+          - Most commented in the last week: [link](${{ env.UPDATED_URL }})
+          - Updated (assigned) PRs in the last week: [link](${{ env.ASSIGNED_PRS }})
