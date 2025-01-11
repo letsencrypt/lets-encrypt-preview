@@ -9,8 +9,7 @@ install_requires = [
     # https://github.com/certbot/certbot/issues/8761 for more info.
     f'acme>={version}',
     f'certbot>={version}',
-    # pyOpenSSL 23.1.0 is a bad release: https://github.com/pyca/pyopenssl/issues/1199
-    'PyOpenSSL>=17.5.0,!=23.1.0',
+    'PyOpenSSL>=24.0.0',
     'pyparsing>=2.4.7',
 ]
 

@@ -30,7 +30,7 @@ install_requires = [
     f'acme>={version}',
     'ConfigArgParse>=1.5.3',
     'configobj>=5.0.6',
-    'cryptography>=3.2.1',
+    'cryptography>=42.0.0',
     'distro>=1.0.1',
     'importlib_metadata>=4.6; python_version < "3.10"',
     # Josepy 2+ may introduce backward incompatible changes by droping usage of

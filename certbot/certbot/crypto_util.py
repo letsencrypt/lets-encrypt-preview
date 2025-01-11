@@ -8,7 +8,6 @@ import datetime
 import hashlib
 import logging
 import re
-import warnings
 from typing import List
 from typing import Optional
 from typing import Set
@@ -171,13 +170,7 @@ def csr_matches_pubkey(csr: bytes, privkey: bytes) -> bool:
     """
     req = x509.load_pem_x509_csr(csr)
     pkey = serialization.load_pem_private_key(privkey, password=None)
-    # This would be better written as `req.public_key() == pkey.public_key()`,
-    # but that requires a newer minimum version of cryptography.
-    return req.is_signature_valid and req.public_key().public_bytes(
-        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
-    ) == pkey.public_key().public_bytes(
-        serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo
-    )
+    return req.is_signature_valid and req.public_key() == pkey.public_key()
 
 
 def import_csr_file(
@@ -514,12 +507,7 @@ def notBefore(cert_path: str) -> datetime.datetime:
     """
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
-    # TODO: This should be `not_valid_before_utc` once we raise the minimum
-    # cryptography version.
-    # https://github.com/certbot/certbot/issues/10105
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', message='Properties that return.*datetime object')
-        return cert.not_valid_before.replace(tzinfo=datetime.timezone.utc)
+    return cert.not_valid_before_utc
 
 
 def notAfter(cert_path: str) -> datetime.datetime:
@@ -533,12 +521,7 @@ def notAfter(cert_path: str) -> datetime.datetime:
     """
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
-    # TODO: This should be `not_valid_after_utc` once we raise the minimum
-    # cryptography version.
-    # https://github.com/certbot/certbot/issues/10105
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', message='Properties that return.*datetime object')
-        return cert.not_valid_after.replace(tzinfo=datetime.timezone.utc)
+    return cert.not_valid_after_utc
 
 
 def sha256sum(filename: str) -> str:
