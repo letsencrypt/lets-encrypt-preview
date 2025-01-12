@@ -11,6 +11,8 @@ from unittest import mock
 import josepy as jose
 import pytest
 import requests
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 
 from acme import challenges
 from acme import crypto_util
@@ -116,13 +118,13 @@ class TLSALPN01ServerTest(unittest.TestCase):
 
     def setUp(self):
         self.certs = {b'localhost': (
-            test_util.load_pyopenssl_private_key('rsa2048_key.pem'),
-            test_util.load_cert('rsa2048_cert.pem'),
+            serialization.load_pem_private_key(test_util.load_vector('rsa2048_key.pem'), password=None),
+            x509.load_pem_x509_certificate(test_util.load_vector('rsa2048_cert.pem')),
         )}
         # Use different certificate for challenge.
         self.challenge_certs = {b'localhost': (
-            test_util.load_pyopenssl_private_key('rsa4096_key.pem'),
-            test_util.load_cert('rsa4096_cert.pem'),
+            serialization.load_pem_private_key(test_util.load_vector('rsa4096_key.pem'), password=None),
+            x509.load_pem_x509_certificate(test_util.load_vector('rsa4096_cert.pem')),
         )}
         from acme.standalone import TLSALPN01Server
         self.server = TLSALPN01Server(("localhost", 0), certs=self.certs,
@@ -151,8 +153,7 @@ class TLSALPN01ServerTest(unittest.TestCase):
             b'localhost', host=host, port=port, timeout=1,
             alpn_protocols=[b"acme-tls/1"])
         #  Expect challenge cert when connecting with ALPN.
-        assert jose.ComparableX509(cert) == \
-                jose.ComparableX509(self.challenge_certs[b'localhost'][1])
+        assert cert.to_cryptography() == self.challenge_certs[b'localhost'][1]
 
     def test_bad_alpn(self):
         host, port = self.server.socket.getsockname()[:2]

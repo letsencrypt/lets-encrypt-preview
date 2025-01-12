@@ -19,7 +19,7 @@ from typing import Union
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import dsa, rsa, ec, ed25519, ed448
+from cryptography.hazmat.primitives.asymmetric import dsa, rsa, ec, ed25519, ed448, types
 import josepy as jose
 from OpenSSL import crypto
 from OpenSSL import SSL
@@ -56,16 +56,21 @@ class Format(enum.IntEnum):
             return serialization.Encoding.PEM
 
 
+_KeyAndCert = Union[
+    Tuple[crypto.PKey, crypto.X509],
+    Tuple[types.CertificateIssuerPrivateKeyTypes, x509.Certificate],
+]
+
+
 class _DefaultCertSelection:
-    def __init__(self, certs: Mapping[bytes, Tuple[crypto.PKey, crypto.X509]]):
+    def __init__(self, certs: Mapping[bytes, _KeyAndCert]):
         self.certs = certs
 
-    def __call__(self, connection: SSL.Connection) -> Optional[Tuple[crypto.PKey, crypto.X509]]:
+    def __call__(self, connection: SSL.Connection) -> Optional[_KeyAndCert]:
         server_name = connection.get_servername()
         if server_name:
             return self.certs.get(server_name, None)
         return None # pragma: no cover
-
 
 class SSLSocket:  # pylint: disable=too-few-public-methods
     """SSL wrapper for sockets.
@@ -80,14 +85,19 @@ class SSLSocket:  # pylint: disable=too-few-public-methods
         `certs` parameter would be ignored, and therefore must be empty.
 
     """
-    def __init__(self, sock: socket.socket,
-                 certs: Optional[Mapping[bytes, Tuple[crypto.PKey, crypto.X509]]] = None,
-                 method: int = _DEFAULT_SSL_METHOD,
-                 alpn_selection: Optional[Callable[[SSL.Connection, List[bytes]], bytes]] = None,
-                 cert_selection: Optional[Callable[[SSL.Connection],
-                                                   Optional[Tuple[crypto.PKey,
-                                                                  crypto.X509]]]] = None
-                 ) -> None:
+    def __init__(
+        self,
+        sock: socket.socket,
+        certs: Optional[Mapping[bytes, _KeyAndCert]] = None,
+        method: int = _DEFAULT_SSL_METHOD,
+        alpn_selection: Optional[Callable[[SSL.Connection, List[bytes]], bytes]] = None,
+        cert_selection: Optional[
+            Callable[
+                [SSL.Connection],
+                Optional[_KeyAndCert],
+            ]
+        ] = None,
+    ) -> None:
         self.sock = sock
         self.alpn_selection = alpn_selection
         self.method = method
@@ -229,7 +239,7 @@ def probe_sni(name: bytes, host: bytes, port: int = 443, timeout: int = 300,  # 
         client_ssl.set_connect_state()
         client_ssl.set_tlsext_host_name(name)  # pyOpenSSL>=0.13
         if alpn_protocols is not None:
-            client_ssl.set_alpn_protos(alpn_protocols)
+            client_ssl.set_alpn_protos(list(alpn_protocols))
         try:
             client_ssl.do_handshake()
             client_ssl.shutdown()
