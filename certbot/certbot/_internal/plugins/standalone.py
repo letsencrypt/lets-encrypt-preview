@@ -14,9 +14,8 @@ from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
 
-from OpenSSL import crypto
-
 from acme import challenges
+from acme import crypto_util
 from acme import standalone as acme_standalone
 from certbot import achallenges
 from certbot import errors
@@ -46,7 +45,7 @@ class ServerManager:
     will serve the same URLs!
 
     """
-    def __init__(self, certs: Mapping[bytes, Tuple[crypto.PKey, crypto.X509]],
+    def __init__(self, certs: Mapping[bytes, crypto_util._KeyAndCert],
                  http_01_resources: Set[acme_standalone.HTTP01RequestHandler.HTTP01Resource]
                  ) -> None:
         self._instances: Dict[int, acme_standalone.HTTP01DualNetworkedServers] = {}
@@ -136,7 +135,7 @@ running. HTTP challenge only (wildcards not supported)."""
         # values, main thread writes). Due to the nature of CPython's
         # GIL, the operations are safe, c.f.
         # https://docs.python.org/2/faq/library.html#what-kinds-of-global-value-mutation-are-thread-safe
-        self.certs: Mapping[bytes, Tuple[crypto.PKey, crypto.X509]] = {}
+        self.certs: Mapping[bytes, crypto_util._KeyAndCert] = {}
         self.http_01_resources: Set[acme_standalone.HTTP01RequestHandler.HTTP01Resource] = set()
 
         self.servers = ServerManager(self.certs, self.http_01_resources)

@@ -9,10 +9,10 @@ import unittest
 from unittest import mock
 
 import josepy as jose
-import OpenSSL.crypto
 import pytest
 
 from acme import challenges
+from acme import crypto_util
 from acme import standalone as acme_standalone
 from certbot import achallenges
 from certbot import errors
@@ -25,7 +25,7 @@ class ServerManagerTest(unittest.TestCase):
 
     def setUp(self):
         from certbot._internal.plugins.standalone import ServerManager
-        self.certs: Dict[bytes, Tuple[OpenSSL.crypto.PKey, OpenSSL.crypto.X509]] = {}
+        self.certs: Dict[bytes, crypto_util._KeyAndCert] = {}
         self.http_01_resources: Set[acme_standalone.HTTP01RequestHandler.HTTP01Resource] = {}
         self.mgr = ServerManager(self.certs, self.http_01_resources)
 

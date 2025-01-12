@@ -77,7 +77,6 @@ test_extras = [
     'setuptools',
     'tox',
     'types-httplib2',
-    'types-pyOpenSSL',
     'types-pyRFC3339',
     'types-pytz',
     'types-pywin32',

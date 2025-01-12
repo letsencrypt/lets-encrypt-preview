@@ -16,7 +16,6 @@ from typing import Set
 from typing import Tuple
 from typing import Type
 
-from OpenSSL import crypto
 from OpenSSL import SSL
 
 from acme import challenges
@@ -46,7 +45,7 @@ class TLSServer(socketserver.TCPServer):
             method=self.method))
 
     def _cert_selection(self, connection: SSL.Connection
-                        ) -> Optional[Tuple[crypto.PKey, crypto.X509]]:  # pragma: no cover
+                        ) -> Optional[crypto_util._KeyAndCert]:  # pragma: no cover
         """Callback selecting certificate for connection."""
         server_name = connection.get_servername()
         if server_name:
@@ -152,8 +151,8 @@ class TLSALPN01Server(TLSServer, ACMEServerMixin):
     ACME_TLS_1_PROTOCOL = b"acme-tls/1"
 
     def __init__(self, server_address: Tuple[str, int],
-                 certs: List[Tuple[crypto.PKey, crypto.X509]],
-                 challenge_certs: Mapping[bytes, Tuple[crypto.PKey, crypto.X509]],
+                 certs: List[crypto_util._KeyAndCert],
+                 challenge_certs: Mapping[bytes, crypto_util._KeyAndCert],
                  ipv6: bool = False) -> None:
         # We don't need to implement a request handler here because the work
         # (including logging) is being done by wrapped socket set up in the
@@ -163,8 +162,7 @@ class TLSALPN01Server(TLSServer, ACMEServerMixin):
             ipv6=ipv6)
         self.challenge_certs = challenge_certs
 
-    def _cert_selection(self, connection: SSL.Connection) -> Optional[Tuple[crypto.PKey,
-                                                                            crypto.X509]]:
+    def _cert_selection(self, connection: SSL.Connection) -> Optional[crypto_util._KeyAndCert]:
         # TODO: We would like to serve challenge cert only if asked for it via
         # ALPN. To do this, we need to retrieve the list of protos from client
         # hello, but this is currently impossible with openssl [0], and ALPN
