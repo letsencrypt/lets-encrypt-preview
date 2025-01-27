@@ -428,6 +428,60 @@ class NginxParserTest(util.NginxTest):
         ])
         assert server['ssl']
 
+    def test_parse_server_raw_comment(self):
+        testdata = """
+        server_name *.goo.far
+            # commented
+            baz.com;
+        """
+        loaded = nginxparser.loads(testdata)
+        server = parser._parse_server_raw(loaded) #pylint: disable=protected-access
+        assert server['names'] == {'*.goo.far', 'baz.com'}
+
+        testdata = """
+        server_name *.goo.far # commented
+            baz.com;
+        """
+        loaded = nginxparser.loads(testdata)
+        server = parser._parse_server_raw(loaded) #pylint: disable=protected-access
+        assert server['names'] == {'*.goo.far', 'baz.com'}
+
+        testdata = """
+        server_name *.goo.far # commented
+            ;
+        """
+        loaded = nginxparser.loads(testdata)
+        server = parser._parse_server_raw(loaded) #pylint: disable=protected-access
+        assert server['names'] == {'*.goo.far'}
+
+        # known bug; see https://github.com/certbot/certbot/issues/9942
+        testdata = """
+        server_name *.goo.far
+            #commented
+            ;
+        """
+        loaded = nginxparser.loads(testdata)
+        server = parser._parse_server_raw(loaded) #pylint: disable=protected-access
+        assert server['names'] == {'*.goo.far', '#commented'}
+
+        # same bug; # isn't actually allowed in domains
+        testdata = """
+        server_name *.go#o.far
+            ;
+        """
+        loaded = nginxparser.loads(testdata)
+        server = parser._parse_server_raw(loaded) #pylint: disable=protected-access
+        assert server['names'] == {'*.go#o.far'}
+
+        testdata = """
+        listen 443
+            # commented
+            ssl;
+        """
+        loaded = nginxparser.loads(testdata)
+        server = parser._parse_server_raw(loaded) #pylint: disable=protected-access
+        assert server['addrs'] == {obj.Addr.fromstring('443 ssl')}
+
     def test_parse_server_raw_unix(self):
         server = parser._parse_server_raw([ #pylint: disable=protected-access
             ['listen', 'unix:/var/run/nginx.sock']

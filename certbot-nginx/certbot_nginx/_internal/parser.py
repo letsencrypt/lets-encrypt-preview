@@ -800,7 +800,11 @@ def _parse_server_raw(server: UnspacedList) -> Dict[str, Any]:
                 if addr.ssl:
                     ssl = True
         elif directive[0] == 'server_name':
-            names.update(x.strip('"\'') for x in directive[1:])
+            params = directive[1:]
+            while '#' in params:
+                end_index = [i for i, param in enumerate(params) if param.startswith('\n')][0]
+                params = params[:params.index('#')] + params[end_index+1:]
+            names.update(x.strip('"\'') for x in params)
         elif _is_ssl_on_directive(directive):
             ssl = True
             apply_ssl_to_all_addrs = True
