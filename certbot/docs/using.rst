@@ -100,6 +100,7 @@ Apache
 
 The Apache plugin currently `supports
 <https://github.com/certbot/certbot/blob/main/certbot-apache/certbot_apache/_internal/entrypoint.py>`_
+<https://github.com/certbot/certbot/blob/main/certbot-apache/certbot_apache/_internal/entrypoint.py>`_
 modern OSes based on Debian, Fedora, SUSE, Gentoo, CentOS and Darwin.
 This automates both obtaining *and* installing certificates on an Apache
 webserver. To specify this plugin on the command line, simply include
@@ -298,9 +299,9 @@ There are also a number of third-party plugins for the client, provided by
 other developers. Many are beta/experimental, but some are already in
 widespread use:
 
-================== ==== ==== =================================================================
+================== ==== ==== ===============================================================
 Plugin             Auth Inst Notes
-================== ==== ==== =================================================================
+================== ==== ==== ===============================================================
 haproxy_           Y    Y    Integration with the HAProxy load balancer
 s3front_           Y    Y    Integration with Amazon CloudFront distribution of S3 buckets
 gandi_             Y    N    Obtain certificates via the Gandi LiveDNS API
@@ -328,8 +329,7 @@ dns-solidserver_   Y    N    DNS Authentication using SOLIDserver (EfficientIP)
 dns-stackit_       Y    N    DNS Authentication using STACKIT DNS
 dns-ionos_         Y    N    DNS Authentication using IONOS Cloud DNS
 dns-mijn-host_     Y    N    DNS Authentication using mijn.host DNS
-nginx-unit_        Y    Y    Automates obtaining and installing a certificate with Nginx Unit
-================== ==== ==== =================================================================
+================== ==== ==== ===============================================================
 
 .. _haproxy: https://github.com/greenhost/certbot-haproxy
 .. _s3front: https://github.com/dlapiduz/letsencrypt-s3front
@@ -358,7 +358,6 @@ nginx-unit_        Y    Y    Automates obtaining and installing a certificate wi
 .. _dns-stackit: https://github.com/stackitcloud/certbot-dns-stackit
 .. _dns-ionos: https://github.com/ionos-cloud/certbot-dns-ionos-cloud
 .. _dns-mijn-host: https://github.com/mijnhost/certbot-dns-mijn-host
-.. _nginx-unit: https://github.com/kea/certbot-nginx-unit
 
 If you're interested, you can also :ref:`write your own plugin <dev-plugin>`.
 
@@ -392,7 +391,7 @@ Example::
 
 .. _updating_certs:
 
-Re-creating and Updating Existing Certificates
+Modifying and Updating Certificates
 ----------------------------------------------
 
 You can use ``certonly`` or ``run`` subcommands to request
@@ -454,10 +453,75 @@ certificate counts against several rate limits that are intended to prevent
 abuse of the ACME protocol, as described
 `here <https://letsencrypt.org/docs/rate-limits/>`__.
 
+.. _Modifying the Renewal Configuration File:
+
+Modifying the Renewal Configuration of Existing Certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When creating a certificate, Certbot will keep track of all of the relevant options chosen by the user. At renewal
+time, Certbot will remember these options and apply them once again.
+
+Sometimes, you may encounter the need to change some of these options for future certificate renewals. To achieve this,
+you will need to perform the following steps:
+
+Certbot v2.3.0 and newer
+~~~~~~~~~~~~~~~~~~~~~~~~
+The ``certbot reconfigure`` command can be used to change a certificate's renewal options.
+This command will use the new renewal options to perform a test renewal against the Let's Encrypt staging server.
+If this is successful, the new renewal options will be saved and will apply to future renewals.
+
+You will need to specify the ``--cert-name``, which can be found by running ``certbot certificates``.
+
+A list of common options that may be updated with the ``reconfigure`` command can be found by running
+``certbot help reconfigure``.
+
+As a practical example, if you were using the ``webroot`` authenticator and had relocated your website to another directory,
+you can change the ``--webroot-path`` to the new directory using the following command:
+
+.. code-block:: shell
+
+  certbot reconfigure --cert-name example.com --webroot-path /path/to/new/location
+
+Certbot v2.2.0 and older
+~~~~~~~~~~~~~~~~~~~~~~~~
+1. Perform a *dry run renewal* with the amended options on the command line. This allows you to confirm that the change
+   is valid and will result in successful future renewals.
+2. If the dry run is successful, perform a *live renewal* of the certificate. This will persist the change for future
+   renewals. If the certificate is not yet due to expire, you will need to force a renewal using ``--force-renewal``.
+
+.. note:: Rate limits from the certificate authority may prevent you from performing multiple renewals in a short
+   period of time. It is strongly recommended to perform the second step only once, when you have decided on what
+   options should change.
+
+As a practical example, if you were using the ``webroot`` authenticator and had relocated your website to another directory,
+you would need to change the ``--webroot-path`` to the new directory. Following the above advice:
+
+1. Perform a *dry-run renewal* of the individual certificate with the amended options::
+
+     certbot renew --cert-name example.com --webroot-path /path/to/new/location --dry-run
+
+2. If the dry-run was successful, make the change permanent by performing a *live renewal* of the certificate with the
+   amended options, including ``--force-renewal``::
+
+     certbot renew --cert-name example.com --webroot-path /path/to/new/location --force-renewal
+
+   ``--cert-name`` selects the particular certificate to be modified. Without this option, all certificates will be selected.
+
+   ``--webroot-path`` is the option intended to be changed. All other previously selected options will be kept the same
+   and do not need to be included in the command.
+
+For advanced certificate management tasks, it is also possible to manually modify the certificate's renewal configuration
+file, but this is discouraged since it can easily break Certbot's ability to renew your certificates. These renewal
+configuration files are located at ``/etc/letsencrypt/renewal/CERTNAME.conf``. If you choose to modify the renewal
+configuration file we advise you to make a backup of the file beforehand and test its validity with the ``certbot renew --dry-run`` command.
+
+.. warning:: Manually modifying files under ``/etc/letsencrypt/renewal/`` can damage them if done improperly and we do not recommend doing so.
+
+
 .. _changing:
 
 Changing a Certificate's Domains
---------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``--cert-name`` flag can also be used to modify the domains a certificate contains,
 by specifying new domains using the ``-d`` or ``--domains`` flag. If certificate ``example.com``
@@ -626,82 +690,56 @@ Follow these steps to safely delete a certificate:
 Renewing certificates
 ---------------------
 
-.. note:: Let's Encrypt CA issues short-lived certificates (90
-   days). Make sure you renew the certificates at least once in 3
-   months.
+Most Certbot installations come with automatic renewals preconfigured. This is done by means of a scheduled task which runs `certbot renew`_ periodically.
 
-.. seealso:: Most Certbot installations come with automatic
-   renewal out of the box. See `Automated Renewals`_ for more details.
+.. note:: Let's Encrypt CA issues short-lived certificates (90
+   days). By default, Certbot will try to renew certificates 30
+   days before they expire.
 
 .. seealso:: Users of the `Manual`_ plugin should note that ``--manual`` certificates
    will not renew automatically, unless combined with authentication hook scripts.
    See `Renewal with the manual plugin <#manual-renewal>`_.
 
-As of version 0.10.0, Certbot supports a ``renew`` action to check
-all installed certificates for impending expiry and attempt to renew
-them. The simplest form is simply
+If you are unsure whether you need to configure automated renewal, follow these steps:
 
-``certbot renew``
+.. _renewal-config-file:
 
-This command attempts to renew any previously-obtained certificates that
-expire in less than 30 days. The same plugin and options that were used
-at the time the certificate was originally issued will be used for the
-renewal attempt, unless you specify other plugins or options. Unlike ``certonly``, ``renew`` acts on
-multiple certificates and always takes into account whether each one is near
-expiry. Because of this, ``renew`` is suitable (and designed) for automated use,
-to allow your system to automatically renew each certificate when appropriate.
-Since ``renew`` only renews certificates that are near expiry it can be
-run as frequently as you want - since it will usually take no action.
+Automated Renewals
+~~~~~~~~~~~~~~~~~~
 
-The ``renew`` command includes hooks for running commands or scripts before or after a certificate is
-renewed. For example, if you have a single certificate obtained using
-the standalone_ plugin, you might need to stop the webserver
-before renewing so standalone can bind to the necessary ports, and
-then restart it after the plugin is finished. Example::
+1. Review the instructions for your system and installation method at
+   https://certbot.eff.org/instructions. They will describe how to set up a scheduled task,
+   if necessary. If no step is listed, your system comes with automated renewal pre-installed,
+   and you should not need to take any additional actions.
+2. On Linux and BSD, you can check to see if your installation method has pre-installed a timer
+   for you. To do so, look for the ``certbot renew`` command in either your system's crontab
+   (typically `/etc/crontab` or `/etc/cron.*/*`) or systemd timers (``systemctl list-timers``).
+3. If you're still not sure, you can configure automated renewal manually by following the steps
+   in the next section. Certbot has been carefully engineered to handle the case where both manual
+   automated renewal and pre-installed automated renewal are set up.
 
-  certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+.. _configure-automated-renewal:
 
-If a hook exits with a non-zero exit code, the error will be printed
-to ``stderr`` but renewal will be attempted anyway. A failing hook
-doesn't directly cause Certbot to exit with a non-zero exit code, but
-since Certbot exits with a non-zero exit code when renewals fail, a
-failed hook causing renewal failures will indirectly result in a
-non-zero exit code. Hooks will only be run if a certificate is due for
-renewal, so you can run the above command frequently without
-unnecessarily stopping your webserver.
+Confiigure Automated Renewal
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When Certbot detects that a certificate is due for renewal, ``--pre-hook``
-and ``--post-hook`` hooks run before and after each attempt to renew it.
-If you want your hook to run only after a successful renewal, use
-``--deploy-hook`` in a command like this.
+If you think you may need to set up automated renewal, follow these instructions to set up a scheduled task to automatically renew your certificates in the background. 
+If you are unsure whether your system has a pre-installed scheduled task for Certbot, it is safe to follow these instructions to create one.
 
-``certbot renew --deploy-hook /path/to/deploy-hook-script``
+.. note::
+   If you're using Windows, these instructions are not neccessary as Certbot on Windows comes with
+   a scheduled task for automated renewal pre-installed.
 
-You can also specify hooks by placing files in subdirectories of Certbot's
-configuration directory. Assuming your configuration directory is
-``/etc/letsencrypt``, any executable files found in
-``/etc/letsencrypt/renewal-hooks/pre``,
-``/etc/letsencrypt/renewal-hooks/deploy``, and
-``/etc/letsencrypt/renewal-hooks/post`` will be run as pre, deploy, and post
-hooks respectively. These hooks are run in alphabetical order. (The order the
-hooks are run is determined by the byte value of the characters in their
-filenames and is not dependent on your locale.)
+   If you are using macOS and installed Certbot using Homebrew, follow the instructions at
+   https://certbot.eff.org/instructions to set up automated renewal. The instructions below
+   are not applicable on macOS.
 
-Prior to certbot 3.2.0, hooks in directories were only run when certificates
-were renewed with the ``renew`` subcommand, but as of 3.2.0, they are run for
-any subcommand.
+Run the following line, which will add a cron job to `/etc/crontab`:
 
-Hooks specified in the command line, :ref:`configuration file
-<config-file>`, or :ref:`renewal configuration files <renewal-config-file>` are
-run as usual after running all hooks in these directories. One minor exception
-to this is if a hook specified elsewhere is simply the path to an executable
-file in the hook directory of the same type (e.g. your pre-hook is the path to
-an executable in ``/etc/letsencrypt/renewal-hooks/pre``), the file is not run a
-second time. You can stop Certbot from automatically running executables found
-in these directories by including ``--no-directory-hooks`` on the command line.
+.. code-block:: shell
 
-More information about hooks can be found by running
-``certbot --help renew``.
+
+  SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}'); echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
 
 If you're sure that this command executes successfully without human
 intervention, you can add the command to ``crontab`` (since certificates
@@ -749,126 +787,6 @@ only those domains, rather than replacing the original certificate.
 When run with a set of domains corresponding to an existing certificate,
 the ``certonly`` command attempts to renew that specific certificate.
 
-Please note that the CA will send notification emails to the address
-you provide if you do not renew certificates that are about to expire.
-
-Certbot is working hard to improve the renewal process, and we
-apologize for any inconvenience you encounter in integrating these
-commands into your individual environment.
-
-.. note:: ``certbot renew`` exit status will only be 1 if a renewal attempt failed.
-  This means ``certbot renew`` exit status will be 0 if no certificate needs to be updated.
-  If you write a custom script and expect to run a command only after a certificate was actually renewed
-  you will need to use the ``--deploy-hook`` since the exit status will be 0 both on successful renewal
-  and when renewal is not necessary.
-
-.. _renewal-config-file:
-.. _Modifying the Renewal Configuration File:
-
-Modifying the Renewal Configuration of Existing Certificates
-------------------------------------------------------------
-
-When creating a certificate, Certbot will keep track of all of the relevant options chosen by the user. At renewal
-time, Certbot will remember these options and apply them once again.
-
-Sometimes, you may encounter the need to change some of these options for future certificate renewals. To achieve this,
-you will need to perform the following steps:
-
-Certbot v2.3.0 and newer
-~~~~~~~~~~~~~~~~~~~~~~~~
-The ``certbot reconfigure`` command can be used to change a certificate's renewal options.
-This command will use the new renewal options to perform a test renewal against the Let's Encrypt staging server.
-If this is successful, the new renewal options will be saved and will apply to future renewals.
-
-You will need to specify the ``--cert-name``, which can be found by running ``certbot certificates``.
-
-A list of common options that may be updated with the ``reconfigure`` command can be found by running
-``certbot help reconfigure``.
-
-As a practical example, if you were using the ``webroot`` authenticator and had relocated your website to another directory,
-you can change the ``--webroot-path`` to the new directory using the following command:
-
-.. code-block:: shell
-
-  certbot reconfigure --cert-name example.com --webroot-path /path/to/new/location
-
-Certbot v2.2.0 and older
-~~~~~~~~~~~~~~~~~~~~~~~~
-1. Perform a *dry run renewal* with the amended options on the command line. This allows you to confirm that the change
-   is valid and will result in successful future renewals.
-2. If the dry run is successful, perform a *live renewal* of the certificate. This will persist the change for future
-   renewals. If the certificate is not yet due to expire, you will need to force a renewal using ``--force-renewal``.
-
-.. note:: Rate limits from the certificate authority may prevent you from performing multiple renewals in a short
-   period of time. It is strongly recommended to perform the second step only once, when you have decided on what
-   options should change.
-
-As a practical example, if you were using the ``webroot`` authenticator and had relocated your website to another directory,
-you would need to change the ``--webroot-path`` to the new directory. Following the above advice:
-
-1. Perform a *dry-run renewal* of the individual certificate with the amended options::
-
-     certbot renew --cert-name example.com --webroot-path /path/to/new/location --dry-run
-
-2. If the dry-run was successful, make the change permanent by performing a *live renewal* of the certificate with the
-   amended options, including ``--force-renewal``::
-
-     certbot renew --cert-name example.com --webroot-path /path/to/new/location --force-renewal
-
-   ``--cert-name`` selects the particular certificate to be modified. Without this option, all certificates will be selected.
-
-   ``--webroot-path`` is the option intended to be changed. All other previously selected options will be kept the same
-   and do not need to be included in the command.
-
-For advanced certificate management tasks, it is also possible to manually modify the certificate's renewal configuration
-file, but this is discouraged since it can easily break Certbot's ability to renew your certificates. These renewal
-configuration files are located at ``/etc/letsencrypt/renewal/CERTNAME.conf``. If you choose to modify the renewal
-configuration file we advise you to make a backup of the file beforehand and test its validity with the ``certbot renew --dry-run`` command.
-
-.. warning:: Manually modifying files under ``/etc/letsencrypt/renewal/`` can damage them if done improperly and we do not recommend doing so.
-
-
-Automated Renewals
-------------------
-
-Most Certbot installations come with automatic renewals preconfigured. This
-is done by means of a scheduled task which runs ``certbot renew`` periodically.
-
-If you are unsure whether you need to configure automated renewal:
-
-1. Review the instructions for your system and installation method at
-   https://certbot.eff.org/instructions. They will describe how to set up a scheduled task,
-   if necessary. If no step is listed, your system comes with automated renewal pre-installed,
-   and you should not need to take any additional actions.
-2. On Linux and BSD, you can check to see if your installation method has pre-installed a timer
-   for you. To do so, look for the ``certbot renew`` command in either your system's crontab
-   (typically `/etc/crontab` or `/etc/cron.*/*`) or systemd timers (``systemctl list-timers``).
-3. If you're still not sure, you can configure automated renewal manually by following the steps
-   in the next section. Certbot has been carefully engineered to handle the case where both manual
-   automated renewal and pre-installed automated renewal are set up.
-
-Setting up automated renewal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you think you may need to set up automated renewal, follow these instructions to set up a
-scheduled task to automatically renew your certificates in the background. If you are unsure
-whether your system has a pre-installed scheduled task for Certbot, it is safe to follow these
-instructions to create one.
-
-.. note::
-   If you're using Windows, these instructions are not neccessary as Certbot on Windows comes with
-   a scheduled task for automated renewal pre-installed.
-
-   If you are using macOS and installed Certbot using Homebrew, follow the instructions at
-   https://certbot.eff.org/instructions to set up automated renewal. The instructions below
-   are not applicable on macOS.
-
-Run the following line, which will add a cron job to `/etc/crontab`:
-
-.. code-block:: shell
-
-  SLEEPTIME=$(awk 'BEGIN{srand(); print int(rand()*(3600+1))}'); echo "0 0,12 * * * root sleep $SLEEPTIME && certbot renew -q" | sudo tee -a /etc/crontab > /dev/null
-
 If you needed to stop your webserver to run Certbot, you'll want to
 add ``pre`` and ``post`` hooks to stop and start your webserver automatically.
 For example, if your webserver is HAProxy, run the following commands to create the hook files
@@ -885,6 +803,117 @@ Congratulations, Certbot will now automatically renew your certificates in the b
 
 If you are interested in learning more about how Certbot renews your certificates, see the
 `Renewing certificates`_ section above.
+
+.. _references:
+
+Reference:
+------------------
+
+.. _certbot_renew:
+
+``certbot renew``
+~~~~~~~~~~~~~~~~~
+
+   This command attempts to renew any previously-obtained certificates that expire in less than 30 days. 
+   The same plugin and options that were used at the time the certificate was originally issued will be used for the renewal attempt, unless you specify other plugins or options. 
+   Unlike certonly, renew acts on multiple certificates and always takes into account whether each one is near expiry. 
+   Because of this, renew is suitable (and designed) for automated use, to allow your system to automatically renew each certificate when appropriate. 
+   Since renew only renews certificates that are near expiry it can be run as frequently as you want - since it will usually take no action.
+
+   .. note:: Options provided to ``certbot renew`` will apply to
+      *every* certificate for which renewal is attempted; for example,
+      ``certbot renew --rsa-key-size 4096`` would try to replace every
+      near-expiry certificate with an equivalent certificate using a 4096-bit
+      RSA public key. If a certificate is successfully renewed using
+      specified options, those options will be saved and used for future
+      renewals of that certificate.
+
+``-q``, ``--quiet``
+^^^^^^^^^^^^^^^^^^^
+   Silence all output except errors.
+
+``--force-renewal``
+^^^^^^^^^^^^^^^^^^^
+   For manually renewing all of your certificates
+
+   Causes the expiration time of the certificate(s) to be ignored when considering renewal, and attempts to
+   renew each and every installed certificate regardless of its age. (This form is not appropriate to run daily because each certificate will be
+   renewed every day, which will quickly run into the certificate authority rate limit.)
+
+Certbot Renew: Hooks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ``renew`` command includes hooks for running commands or scripts before or after a certificate is
+renewed.
+
+.. note:: ``certbot renew`` exit status will only be 1 if a renewal attempt failed. This means ``certbot renew`` exit status will be 0 if no certificate needs to be updated. 
+  If you write a custom script and expect to run a command only after a certificate was actually renewed
+  you will need to use the deploy_hook_ since the exit status will be 0 both on successful renewal
+  and when renewal is not necessary.
+
+Specifying Hooks
+^^^^^^^^^^^^^^^^
+
+You can specify hooks by placing files in subdirectories of Certbot's
+configuration directory. Assuming your configuration directory is
+``/etc/letsencrypt``, any executable files found in
+``/etc/letsencrypt/renewal-hooks/pre``,
+``/etc/letsencrypt/renewal-hooks/deploy``, and
+``/etc/letsencrypt/renewal-hooks/post`` will be run as pre, deploy, and post
+hooks respectively when any certificate is renewed with the ``renew``
+subcommand. These hooks are run in alphabetical order and are not run for other
+subcommands. (The order the hooks are run is determined by the byte value of
+the characters in their filenames and is not dependent on your locale.)
+
+``--pre-hook`` & ``--post-hook``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   Run before and after each attempt to renew it.
+
+   For example, if you have a single certificate obtained using
+   the standalone_ plugin, you might need to stop the webserver
+   before renewing so standalone can bind to the necessary ports, and
+   then restart it after the plugin is finished. Example::
+
+     certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start"
+
+   If a hook exits with a non-zero exit code, the error will be printed
+   to ``stderr`` but renewal will be attempted anyway.
+
+.. _deploy_hook:
+
+``--deploy-hook``
+^^^^^^^^^^^^^^^^^
+
+   Run only after a successful renewal.
+
+   Example:
+   ``certbot renew --deploy-hook /path/to/deploy-hook-script``
+
+   Hooks specified in the command line, :ref:`configuration file
+   <config-file>`, or :ref:`renewal configuration files <renewal-config-file>` are
+   run as usual after running all hooks in these directories. One minor exception
+   to this is if a hook specified elsewhere is simply the path to an executable
+   file in the hook directory of the same type (e.g. your pre-hook is the path to
+   an executable in ``/etc/letsencrypt/renewal-hooks/pre``), the file is not run a
+   second time. You can stop Certbot from automatically running executables found
+   in these directories by including ``--no-directory-hooks`` on the command line.
+
+Failing Hooks
+^^^^^^^^^^^^^
+Doesn't directly cause Certbot to exit with a non-zero exit code, but
+since Certbot exits with a non-zero exit code when renewals fail, a
+failed hook causing renewal failures will indirectly result in a
+non-zero exit code. Hooks will only be run if a certificate is due for
+renewal, so you can run the above command frequently without
+unnecessarily stopping your webserver.
+
+More information about hooks can be found by running
+``certbot --help renew``.
+
+
+Please note that the CA will send notification emails to the address
+you provide if you do not renew certificates that are about to expire.
+
 
 .. _where-certs:
 
