@@ -1,4 +1,5 @@
 """Module configuring Certbot in a snap environment"""
+from __future__ import annotations
 import logging
 import socket
 from typing import Iterable
