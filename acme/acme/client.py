@@ -14,6 +14,7 @@ from typing import Optional
 from typing import Set
 from typing import Tuple
 from typing import Union
+import warnings
 
 from cryptography import x509
 
@@ -226,7 +227,10 @@ class ClientV2:
         """
         csr = OpenSSL.crypto.load_certificate_request(
             OpenSSL.crypto.FILETYPE_PEM, orderr.csr_pem)
-        wrapped_csr = messages.CertificateRequest(csr=jose.ComparableX509(csr))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                message='The next major version of josepy will remove josepy.util.ComparableX509')
+            wrapped_csr = messages.CertificateRequest(csr=jose.ComparableX509(csr))
         res = self._post(orderr.body.finalize, wrapped_csr)
         orderr = orderr.update(body=messages.Order.from_json(res.json()))
         return orderr

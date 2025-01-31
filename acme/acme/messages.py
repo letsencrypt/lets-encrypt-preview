@@ -12,6 +12,7 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 from typing import TypeVar
+import warnings
 
 import josepy as jose
 
@@ -582,7 +583,11 @@ class CertificateRequest(jose.JSONObjectWithFields):
         `OpenSSL.crypto.X509Req` wrapped in `.ComparableX509`
 
     """
-    csr: jose.ComparableX509 = jose.field('csr', decoder=jose.decode_csr, encoder=jose.encode_csr)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore',
+            message='The next major version of josepy will remove josepy.util.ComparableX509')
+        csr: jose.ComparableX509 = jose.field(
+            'csr', decoder=jose.decode_csr, encoder=jose.encode_csr)
 
 
 class CertificateResource(ResourceWithURI):
@@ -594,7 +599,10 @@ class CertificateResource(ResourceWithURI):
     :ivar tuple authzrs: `tuple` of `AuthorizationResource`.
 
     """
-    cert_chain_uri: str = jose.field('cert_chain_uri')
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore',
+            message='The next major version of josepy will remove josepy.util.ComparableX509')
+        cert_chain_uri: str = jose.field('cert_chain_uri')
     authzrs: Tuple[AuthorizationResource, ...] = jose.field('authzrs')
 
 
@@ -605,8 +613,11 @@ class Revocation(jose.JSONObjectWithFields):
         `jose.ComparableX509`
 
     """
-    certificate: jose.ComparableX509 = jose.field(
-        'certificate', decoder=jose.decode_cert, encoder=jose.encode_cert)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore',
+            message='The next major version of josepy will remove josepy.util.ComparableX509')
+        certificate: jose.ComparableX509 = jose.field(
+            'certificate', decoder=jose.decode_cert, encoder=jose.encode_cert)
     reason: int = jose.field('reason')
 
 

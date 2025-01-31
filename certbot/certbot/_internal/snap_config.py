@@ -1,4 +1,5 @@
 """Module configuring Certbot in a snap environment"""
+from __future__ import annotations
 import logging
 import socket
 from typing import Iterable
@@ -134,12 +135,12 @@ class _SnapdAdapter(HTTPAdapter):
     # help out those packagers while ensuring this code works reliably, we offer custom versions of
     # both functions for now. when certbot does declare a dependency on requests>=2.32.2 in its
     # setup.py files, get_connection can be deleted
-    def get_connection(self, url: str,
+    def get_connection(self, url: str | bytes,
                        proxies: Optional[Iterable[str]] = None) -> _SnapdConnectionPool:
         return _SnapdConnectionPool()
 
     def get_connection_with_tls_context(self, request: PreparedRequest,
-                                        verify: bool,
+                                        verify: bool | str | None,
                                         proxies: Optional[Iterable[str]] = None,
                                         cert: Optional[Union[str, Tuple[str,str]]] = None
                                         ) -> _SnapdConnectionPool:

@@ -8,9 +8,6 @@ license = "Apache License 2.0"
 [tool.poetry.dependencies]
 python = "^3.9"
 
-# workaround for: https://github.com/python-poetry/poetry-plugin-export/issues/183
-urllib3 = ">=1.25.4,<1.27"
-
 # Local dependencies
 # Any local packages that have dependencies on other local packages must be
 # listed below before the package it depends on. For instance, certbot depends
