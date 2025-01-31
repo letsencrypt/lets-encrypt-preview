@@ -222,7 +222,7 @@ Once installed, you can find documentation on how to use each plugin at:
 Manual
 ------
 
-If you'd like to obtain a certificate running ``certbot`` on a machine
+If you'd like to obtain a certificate running `Certbot <https://eff-certbot.readthedocs.io/en/latest/install.html>`_ on a machine
 other than your target webserver or perform the steps for domain
 validation yourself, you can use the manual plugin. While hidden from
 the UI, you can use the plugin to obtain a certificate by specifying
