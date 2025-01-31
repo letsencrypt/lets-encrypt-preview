@@ -2,7 +2,6 @@
 import errno
 import sys
 from typing import List
-import unittest
 from unittest import mock
 
 import pytest

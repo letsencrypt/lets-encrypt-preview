@@ -23,17 +23,13 @@ should execute successfully.
 """
 
 import argparse
-import getpass
 import glob
 import os.path
 import re
 import subprocess
 import sys
-import tempfile
-from zipfile import ZipFile
 
 from azure.devops.connection import Connection
-import requests
 
 # Path to the root directory of the Certbot repository containing this script
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

@@ -1,6 +1,5 @@
 """Test certbot_nginx._internal.display_ops."""
 import sys
-import unittest
 
 import pytest
 

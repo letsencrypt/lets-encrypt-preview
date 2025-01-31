@@ -1,7 +1,6 @@
 """Tests for certbot._internal.cli."""
 import argparse
 import copy
-from importlib import reload as reload_module
 import io
 import sys
 import tempfile

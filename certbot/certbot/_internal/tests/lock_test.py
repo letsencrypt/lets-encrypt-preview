@@ -2,7 +2,6 @@
 import functools
 import multiprocessing
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -17,8 +16,6 @@ except ImportError:
     POSIX_MODE = False
 else:
     POSIX_MODE = True
-
-
 
 
 class LockDirTest(test_util.TempDirTestCase):

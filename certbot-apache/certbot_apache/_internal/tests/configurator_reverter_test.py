@@ -1,7 +1,6 @@
 """Test for certbot_apache._internal.configurator implementations of reverter"""
 import shutil
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -13,7 +12,7 @@ from certbot_apache._internal.tests import util
 class ConfiguratorReverterTest(util.ApacheTest):
     """Test for ApacheConfigurator reverter methods"""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwards):
         super().setUp()
 
         self.config = util.get_apache_configurator(

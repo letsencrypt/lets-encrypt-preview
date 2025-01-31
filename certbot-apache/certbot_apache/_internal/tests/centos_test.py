@@ -1,6 +1,5 @@
 """Test for certbot_apache._internal.configurator for Centos overrides"""
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -37,7 +36,7 @@ def get_vh_truth(temp_dir, config_name):
 class FedoraRestartTest(util.ApacheTest):
     """Tests for Fedora specific self-signed certificate override"""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         test_dir = "centos7_apache/apache"
         config_root = "centos7_apache/apache/httpd"
         vhost_root = "centos7_apache/apache/httpd/conf.d"
@@ -90,7 +89,7 @@ class FedoraRestartTest(util.ApacheTest):
 class UseCorrectApacheExecutableTest(util.ApacheTest):
     """Make sure the various CentOS/RHEL versions use the right httpd executable"""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         test_dir = "centos7_apache/apache"
         config_root = "centos7_apache/apache/httpd"
         vhost_root = "centos7_apache/apache/httpd/conf.d"

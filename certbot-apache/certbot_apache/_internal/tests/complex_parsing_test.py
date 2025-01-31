@@ -1,7 +1,6 @@
 """Tests for certbot_apache._internal.parser."""
 import shutil
 import sys
-import unittest
 
 import pytest
 
@@ -13,7 +12,7 @@ from certbot_apache._internal.tests import util
 class ComplexParserTest(util.ParserTest):
     """Apache Parser Test."""
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         super().setUp("complex_parsing", "complex_parsing")
 
         self.setup_variables()

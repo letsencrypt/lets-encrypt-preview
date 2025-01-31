@@ -2,7 +2,6 @@
 """Test for certbot_apache._internal.configurator AutoHSTS functionality"""
 import re
 import sys
-import unittest
 from unittest import mock
 
 import pytest
@@ -16,7 +15,7 @@ class AutoHSTSTest(util.ApacheTest):
     """Tests for AutoHSTS feature"""
     # pylint: disable=protected-access
 
-    def setUp(self):  # pylint: disable=arguments-differ
+    def setUp(self, **kwargs):
         super().setUp()
 
         self.config = util.get_apache_configurator(

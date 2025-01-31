@@ -8,7 +8,6 @@ isort:skip_file
 #     to complain that a function is redefined (because we imported if first from os.path).
 
 # pylint: disable=function-redefined
-from __future__ import absolute_import
 
 # First round of wrapping: we import statically all public attributes exposed by the os.path
 # module. This allows in particular to have pylint, mypy, IDEs be aware that most of os.path

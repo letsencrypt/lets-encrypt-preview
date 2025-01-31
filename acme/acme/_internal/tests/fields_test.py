@@ -2,7 +2,6 @@
 import datetime
 import sys
 import unittest
-import warnings
 
 import josepy as jose
 import pytest
