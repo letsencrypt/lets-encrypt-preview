@@ -11,6 +11,7 @@ import typing
 from typing import Any
 from typing import Callable
 from typing import List
+from typing import Literal
 from typing import Mapping
 from typing import Optional
 from typing import Sequence
@@ -21,7 +22,7 @@ from typing import Union
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import dsa, rsa, ec, ed25519, ed448, types
-import josepy as jose
+from cryptography.hazmat.primitives.serialization import Encoding
 from OpenSSL import crypto
 from OpenSSL import SSL
 
@@ -49,13 +50,13 @@ class Format(enum.IntEnum):
     DER = crypto.FILETYPE_ASN1
     PEM = crypto.FILETYPE_PEM
 
-    def to_cryptography_encoding(self) -> serialization.Encoding:
+    def to_cryptography_encoding(self) -> Encoding:
         """Converts the Format to the corresponding cryptography `Encoding`.
         """
         if self == Format.DER:
-            return serialization.Encoding.DER
+            return Encoding.DER
         else:
-            return serialization.Encoding.PEM
+            return Encoding.PEM
 
 
 _KeyAndCert = Union[
@@ -136,6 +137,8 @@ class SSLSocket:  # pylint: disable=too-few-public-methods
         new_context.set_options(SSL.OP_NO_SSLv2)
         new_context.set_options(SSL.OP_NO_SSLv3)
         new_context.use_privatekey(key)
+        if isinstance(cert, x509.Certificate):
+            cert = crypto.X509.from_cryptography(cert)
         new_context.use_certificate(cert)
         if self.alpn_selection is not None:
             new_context.set_alpn_select_callback(self.alpn_selection)
@@ -197,7 +200,7 @@ class SSLSocket:  # pylint: disable=too-few-public-methods
 
 def probe_sni(name: bytes, host: bytes, port: int = 443, timeout: int = 300,  # pylint: disable=too-many-arguments
               method: int = _DEFAULT_SSL_METHOD, source_address: Tuple[str, int] = ('', 0),
-              alpn_protocols: Optional[Sequence[bytes]] = None) -> crypto.X509:
+              alpn_protocols: Optional[Sequence[bytes]] = None) -> x509.Certificate:
     """Probe SNI server for SSL certificate.
 
     :param bytes name: Byte string to send as the server name in the
@@ -215,7 +218,7 @@ def probe_sni(name: bytes, host: bytes, port: int = 443, timeout: int = 300,  # 
     :raises acme.errors.Error: In case of any problems.
 
     :returns: SSL certificate presented by the server.
-    :rtype: OpenSSL.crypto.X509
+    :rtype: cryptography.x509.Certificate
 
     """
     context = SSL.Context(method)
@@ -249,7 +252,7 @@ def probe_sni(name: bytes, host: bytes, port: int = 443, timeout: int = 300,  # 
             raise errors.Error(error)
     cert = client_ssl.get_peer_certificate()
     assert cert # Appease mypy. We would have crashed out by now if there was no certificate.
-    return cert
+    return cert.to_cryptography()
 
 
 # Annoyingly, we can't directly use cryptography's equivalent Union[] type for
@@ -334,7 +337,7 @@ def make_csr(
         )
 
     csr = builder.sign(private_key, hashes.SHA256())
-    return csr.public_bytes(serialization.Encoding.PEM)
+    return csr.public_bytes(Encoding.PEM)
 
 
 def get_names_from_subject_and_extensions(
@@ -373,24 +376,48 @@ def get_names_from_subject_and_extensions(
 
 def _pyopenssl_cert_or_req_all_names(loaded_cert_or_req: Union[crypto.X509, crypto.X509Req]
                                      ) -> List[str]:
+    """
+    Deprecated
+    .. deprecated: 3.x.x
+    """
+    warnings.warn(
+        "_pyopenssl_cert_or_req_all_names is deprecated and will be removed in the "
+        "next major release of Certbot. Please use "
+        "acme.crypto_util.get_names_from_subject_and_extensions instead.", DeprecationWarning,
+        stacklevel=2
+    )
     cert_or_req = loaded_cert_or_req.to_cryptography()
     return get_names_from_subject_and_extensions(
         cert_or_req.subject, cert_or_req.extensions
     )
 
 
-def _pyopenssl_cert_or_req_san(cert_or_req: Union[crypto.X509, crypto.X509Req]) -> List[str]:
+def _cryptography_cert_or_req_san(cert_or_req: Union[x509.Certificate, x509.CertificateSigningRequest]) -> List[str]:
     """Get Subject Alternative Names from certificate or CSR using pyOpenSSL.
 
     .. note:: Although this is `acme` internal API, it is used by
         `letsencrypt`.
 
     :param cert_or_req: Certificate or CSR.
-    :type cert_or_req: `OpenSSL.crypto.X509` or `OpenSSL.crypto.X509Req`.
+    :type cert_or_req: `x509.Certificate` or `x509.CertificateSigningRequest`.
 
     :returns: A list of Subject Alternative Names that is DNS.
     :rtype: `list` of `str`
 
+    """
+    # ???: is this translation needed?
+    exts = cert_or_req.extensions
+    try:
+        san_ext = exts.get_extension_for_class(x509.SubjectAlternativeName)
+    except x509.ExtensionNotFound:
+        return []
+
+    return san_ext.value.get_values_for_type(x509.DNSName)
+
+
+def _pyopenssl_cert_or_req_san(cert_or_req: Union[crypto.X509, crypto.X509Req]) -> List[str]:
+    """
+    DEPRECATED
     """
     exts = cert_or_req.to_cryptography().extensions
     try:
@@ -553,12 +580,13 @@ def gen_ss_cert(key: crypto.PKey, domains: Optional[List[str]] = None,
     return cert
 
 
-def dump_pyopenssl_chain(chain: Union[List[jose.ComparableX509], List[crypto.X509]],
-                         filetype: Union[Format, int] = Format.PEM) -> bytes:
+def dump_cryptography_chain(
+    chain: List[x509.Certificate],
+    encoding: Literal[Encoding.PEM, Encoding.DER] = Encoding.PEM,
+) -> bytes:
     """Dump certificate chain into a bundle.
 
-    :param list chain: List of `OpenSSL.crypto.X509` (or wrapped in
-        :class:`josepy.util.ComparableX509`).
+    :param list chain: List of `cryptography.x509.Certificate`.
 
     :returns: certificate chain bundle
     :rtype: bytes
@@ -567,15 +595,9 @@ def dump_pyopenssl_chain(chain: Union[List[jose.ComparableX509], List[crypto.X50
     # XXX: returns empty string when no chain is available, which
     # shuts up RenewableCert, but might not be the best solution...
 
-    filetype = Format(filetype)
-    def _dump_cert(cert: Union[jose.ComparableX509, crypto.X509]) -> bytes:
-        if isinstance(cert, jose.ComparableX509):
-            if isinstance(cert.wrapped, crypto.X509Req):
-                raise errors.Error("Unexpected CSR provided.")  # pragma: no cover
-            cert = cert.wrapped
+    def _dump_cert(cert: x509.Certificate) -> bytes:
+        return cert.public_bytes(encoding)
 
-        return cert.to_cryptography().public_bytes(filetype.to_cryptography_encoding())
-
-    # assumes that OpenSSL.crypto.dump_certificate includes ending
+    # assumes that x509.Certificate.public_bytes includes ending
     # newline character
     return b"".join(_dump_cert(cert) for cert in chain)
