@@ -371,6 +371,8 @@ renew:
                         This setting does not apply to important TLS
                         configuration updates. (default: False)
   --no-autorenew        Disable auto renewal of certificates. (default: False)
+  --renewal-limit
+                        Maximum number of successful renewals to perform
 
 certificates:
   List certificates managed by Certbot

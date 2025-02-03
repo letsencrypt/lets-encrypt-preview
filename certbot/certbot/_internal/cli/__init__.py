@@ -414,6 +414,10 @@ def prepare_and_parse_args(plugins: plugins_disco.PluginsRegistry, args: List[st
         default=flag_default("random_sleep_on_renew"), dest="random_sleep_on_renew",
         help=argparse.SUPPRESS)
     helpful.add(
+        "renew", "--renewal-limit", type=nonnegative_int,
+        default=flag_default("renewal_limit"),
+        help="Specifies the maximum number of renewals that will be performed")
+    helpful.add(
         ["renew", "reconfigure"], "--deploy-hook", action=_DeployHookAction,
         help='Command to be run in a shell once for each successfully'
         ' issued certificate.'

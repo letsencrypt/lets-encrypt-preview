@@ -6,7 +6,8 @@ Certbot adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-*
+* certbot renew now accepts a command line option (--renewal-limit) that can specify
+  a maximum number of renewals.
 
 ### Changed
 

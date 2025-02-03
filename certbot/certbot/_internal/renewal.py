@@ -559,6 +559,11 @@ def handle_renewal_request(config: configuration.NamespaceConfig) -> Tuple[list,
             if renewal_candidate:
                 renew_failures.append(renewal_candidate.fullchain)
                 failed_domains.extend(renewal_candidate.names())
+        if config.renewal_limit is not None:
+            if len(renew_successes) + len(renew_failures) >= config.renewal_limit:
+                display_util.notification("Renewal limit met. Skipping further renewals.",
+                    pause=False)
+                break
 
     # Describe all the results
     _renew_describe_results(config, renew_successes, renew_failures,
