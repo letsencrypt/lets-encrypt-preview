@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Let's Encrypt Community Support
+    url: https://community.letsencrypt.org/
+    about: If you're having trouble using Certbot and aren't sure you've found a bug or request for a new feature, please first try asking for help here. There is a much larger community there of people familiar with the project who will be able to more quickly answer your questions.
+  - name: Certbot Security Policy
+    url: https://github.com/certbot/certbot/security/advisories/new
+    about: Please report security vulnerabilities here.

@@ -1,0 +1,66 @@
+name: Bug Report
+description: File a bug report.
+title: "[Bug]: "
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    attributes:
+      label: OS
+      description: |
+        Describe your Operating System. Examples: Ubuntu 18.04, CentOS 8 Stream
+      placeholder: Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Installation method
+      description: |
+        How did you install Certbot? Examples: snap, pip, apt, yum
+      placeholder: snap
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Certbot Version
+      description: |
+        If you're not sure, you can find this by running `certbot --version`.
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: |
+        I ran this command and it produced this output. Example:
+        ```
+        $ sudo certbot certonly -d adfsfasdf.asdfasdf --staging
+        Saving debug log to /var/log/letsencrypt/letsencrypt.log
+        Plugins selected: Authenticator nginx, Installer nginx
+        Requesting a certificate for example.com
+        An unexpected error occurred:
+        Invalid identifiers requested :: Cannot issue for "adfsfasdf.asdfasdf": Domain name does not end with a valid public suffix (TLD)
+        Ask for help or search for solutions at https://community.letsencrypt.org. See the logfile /var/log/letsencrypt/letsencrypt.log or re-run Certbot with -v for more details.
+        ```
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Certbot's behavior differed from what I expected because.
+      placeholder: "What was expected?"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Here is a Certbot log showing the issue (if available). Logs are stored in `/var/log/letsencrypt` by default. Feel free to redact domains, e-mail and IP addresses as you see fit.
+      render: shell
+    
