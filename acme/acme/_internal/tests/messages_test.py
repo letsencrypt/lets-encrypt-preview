@@ -1,10 +1,8 @@
 """Tests for acme.messages."""
-import contextlib
 import sys
 from typing import Dict
 import unittest
 from unittest import mock
-import warnings
 
 import josepy as jose
 import pytest
@@ -12,8 +10,8 @@ import pytest
 from acme import challenges
 from acme._internal.tests import test_util
 
-CERT = test_util.load_comparable_cert('cert.der')
-CSR = test_util.load_comparable_csr('csr.der')
+CERT = test_util.load_cert('cert.der')
+CSR = test_util.load_csr('csr.der')
 KEY = test_util.load_rsa_private_key('rsa512_key.pem')
 
 

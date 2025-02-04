@@ -13,6 +13,8 @@ from typing import Tuple
 from typing import Type
 from typing import TypeVar
 
+from cryptography import x509
+
 import josepy as jose
 
 from acme import challenges
@@ -578,18 +580,16 @@ class AuthorizationResource(ResourceWithURI):
 class CertificateRequest(jose.JSONObjectWithFields):
     """ACME newOrder request.
 
-    :ivar jose.ComparableX509 csr:
-        `OpenSSL.crypto.X509Req` wrapped in `.ComparableX509`
+    :ivar x509.CertificateSigningRequest csr: `x509.CertificateSigningRequest`
 
     """
-    csr: jose.ComparableX509 = jose.field('csr', decoder=jose.decode_csr, encoder=jose.encode_csr)
+    csr: x509.CertificateSigningRequest = jose.field('csr', decoder=jose.decode_csr, encoder=jose.encode_csr)
 
 
 class CertificateResource(ResourceWithURI):
     """Certificate Resource.
 
-    :ivar josepy.util.ComparableX509 body:
-        `OpenSSL.crypto.X509` wrapped in `.ComparableX509`
+    :ivar x509.Certificate body: `x509.Certificate`
     :ivar str cert_chain_uri: URI found in the 'up' ``Link`` header
     :ivar tuple authzrs: `tuple` of `AuthorizationResource`.
 
@@ -601,11 +601,10 @@ class CertificateResource(ResourceWithURI):
 class Revocation(jose.JSONObjectWithFields):
     """Revocation message.
 
-    :ivar jose.ComparableX509 certificate: `OpenSSL.crypto.X509` wrapped in
-        `jose.ComparableX509`
+    :ivar x509.Certificate certificate: `x509.Certificate`
 
     """
-    certificate: jose.ComparableX509 = jose.field(
+    certificate: x509.Certificate = jose.field(
         'certificate', decoder=jose.decode_cert, encoder=jose.encode_cert)
     reason: int = jose.field('reason')
 

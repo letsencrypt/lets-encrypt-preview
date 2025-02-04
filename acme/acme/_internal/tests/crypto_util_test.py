@@ -11,7 +11,6 @@ import unittest
 from unittest import mock
 import warnings
 
-import josepy as jose
 import OpenSSL
 import pytest
 from cryptography import x509
@@ -33,10 +32,10 @@ class SSLSocketAndProbeSNITest(unittest.TestCase):
     """Tests for acme.crypto_util.SSLSocket/probe_sni."""
 
     def setUp(self):
-        self.cert = test_util.load_comparable_cert('rsa2048_cert.pem')
+        self.cert = test_util.load_cert('rsa2048_cert.pem')
         key = test_util.load_pyopenssl_private_key('rsa2048_key.pem')
         # pylint: disable=protected-access
-        certs = {b'foo': (key, self.cert.wrapped)}
+        certs = {b'foo': (key, self.cert)}
 
         from acme.crypto_util import SSLSocket
 
@@ -58,8 +57,7 @@ class SSLSocketAndProbeSNITest(unittest.TestCase):
 
     def _probe(self, name):
         from acme.crypto_util import probe_sni
-        return jose.ComparableX509(probe_sni(
-            name, host='127.0.0.1', port=self.port))
+        return probe_sni(name, host='127.0.0.1', port=self.port)
 
     def _start_server(self):
         self.server_thread.start()
@@ -107,7 +105,7 @@ class PyOpenSSLCertOrReqAllNamesTest(unittest.TestCase):
         return _pyopenssl_cert_or_req_all_names(loader(name))
 
     def _call_cert(self, name):
-        return self._call(test_util.load_cert, name)
+        return self._call(test_util.load_pyopenssl_cert, name)
 
     def test_cert_one_san_no_common(self):
         assert self._call_cert('cert-nocn.der') == \
@@ -140,10 +138,10 @@ class PyOpenSSLCertOrReqSANTest(unittest.TestCase):
                 for i in range(0, len(chars), 45)]
 
     def _call_cert(self, name):
-        return self._call(test_util.load_cert, name)
+        return self._call(test_util.load_pyopenssl_cert, name)
 
     def _call_csr(self, name):
-        return self._call(test_util.load_csr, name)
+        return self._call(test_util.load_pyopenssl_csr, name)
 
     def test_cert_no_sans(self):
         assert self._call_cert('cert.pem') == []
@@ -391,26 +389,16 @@ class DumpPyopensslChainTest(unittest.TestCase):
     @classmethod
     def _call(cls, loaded):
         # pylint: disable=protected-access
-        from acme.crypto_util import dump_pyopenssl_chain
-        return dump_pyopenssl_chain(loaded)
+        from acme.crypto_util import dump_cryptography_chain
+        return dump_cryptography_chain(loaded)
 
     def test_dump_pyopenssl_chain(self):
         names = ['cert.pem', 'cert-san.pem', 'cert-idnsans.pem']
         loaded = [test_util.load_cert(name) for name in names]
         length = sum(
-            len(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, cert))
+            len(cert.public_bytes(serialization.Encoding.PEM))
             for cert in loaded)
         assert len(self._call(loaded)) == length
-
-    def test_dump_pyopenssl_chain_wrapped(self):
-        names = ['cert.pem', 'cert-san.pem', 'cert-idnsans.pem']
-        loaded = [test_util.load_cert(name) for name in names]
-        wrap_func = jose.ComparableX509
-        wrapped = [wrap_func(cert) for cert in loaded]
-        dump_func = OpenSSL.crypto.dump_certificate
-        length = sum(len(dump_func(OpenSSL.crypto.FILETYPE_PEM, cert)) for cert in loaded)
-        assert len(self._call(wrapped)) == length
-
 
 if __name__ == '__main__':
     sys.exit(pytest.main(sys.argv[1:] + [__file__]))  # pragma: no cover

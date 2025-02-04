@@ -1,6 +1,5 @@
 """Tests for acme.util."""
 import sys
-import unittest
 
 import pytest
 

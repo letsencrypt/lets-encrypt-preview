@@ -200,11 +200,7 @@ def example_http():
 
     # Revoke certificate
 
-    fullchain_com = jose.ComparableX509(
-        OpenSSL.crypto.X509.from_cryptography(
-            x509.load_pem_x509_certificate(fullchain_pem)
-        )
-    )
+    fullchain_com = x509.load_pem_x509_certificate(fullchain_pem)
 
     try:
         client_acme.revoke(fullchain_com, 0)  # revocation reason = 0

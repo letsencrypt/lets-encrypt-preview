@@ -18,7 +18,6 @@ from typing import Union
 from cryptography import x509
 
 import josepy as jose
-import OpenSSL
 import requests
 from requests.adapters import HTTPAdapter
 from requests.utils import parse_header_links
@@ -224,9 +223,8 @@ class ClientV2:
         :returns: updated order
         :rtype: messages.OrderResource
         """
-        csr = OpenSSL.crypto.load_certificate_request(
-            OpenSSL.crypto.FILETYPE_PEM, orderr.csr_pem)
-        wrapped_csr = messages.CertificateRequest(csr=jose.ComparableX509(csr))
+        csr = x509.load_pem_x509_csr(orderr.csr_pem)
+        wrapped_csr = messages.CertificateRequest(csr=csr)
         res = self._post(orderr.body.finalize, wrapped_csr)
         orderr = orderr.update(body=messages.Order.from_json(res.json()))
         return orderr
@@ -279,11 +277,10 @@ class ClientV2:
         self.begin_finalization(orderr)
         return self.poll_finalization(orderr, deadline, fetch_alternative_chains)
 
-    def revoke(self, cert: jose.ComparableX509, rsn: int) -> None:
+    def revoke(self, cert: x509.Certificate, rsn: int) -> None:
         """Revoke certificate.
 
-        :param .ComparableX509 cert: `OpenSSL.crypto.X509` wrapped in
-            `.ComparableX509`
+        :param x509.Certificate cert: `x509.Certificate`
 
         :param int rsn: Reason code for certificate revocation.
 
@@ -471,11 +468,10 @@ class ClientV2:
 
         return datetime.datetime.now() + datetime.timedelta(seconds=seconds)
 
-    def _revoke(self, cert: jose.ComparableX509, rsn: int, url: str) -> None:
+    def _revoke(self, cert: x509.Certificate, rsn: int, url: str) -> None:
         """Revoke certificate.
 
-        :param .ComparableX509 cert: `OpenSSL.crypto.X509` wrapped in
-            `.ComparableX509`
+        :param .x509.Certificate cert: `x509.Certificate`
 
         :param int rsn: Reason code for certificate revocation.
 

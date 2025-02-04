@@ -419,7 +419,7 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
         return hashlib.sha256(self.key_authorization.encode('utf-8')).digest()
 
     def gen_cert(self, domain: str, key: Optional[crypto.PKey] = None, bits: int = 2048
-                 ) -> Tuple[crypto.X509, crypto.PKey]:
+                 ) -> Tuple[x509.Certificate, crypto.PKey]:
         """Generate tls-alpn-01 certificate.
 
         :param str domain: Domain verified by the challenge.
@@ -428,7 +428,7 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
             fresh key will be generated.
         :param int bits: Number of bits for newly generated key.
 
-        :rtype: `tuple` of `OpenSSL.crypto.X509` and `OpenSSL.crypto.PKey`
+        :rtype: `tuple` of `x509.Certificate` and `OpenSSL.crypto.PKey`
 
         """
         if key is None:
@@ -450,10 +450,10 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
             force_san=True,
             extensions=[acme_extension]
         )
-        return crypto.X509.from_cryptography(cert), key
+        return cert, key
 
     def probe_cert(self, domain: str, host: Optional[str] = None,
-                   port: Optional[int] = None) -> crypto.X509:
+                   port: Optional[int] = None) -> x509.Certificate:
         """Probe tls-alpn-01 challenge certificate.
 
         :param str domain: domain being validated, required.
@@ -470,20 +470,17 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
         return crypto_util.probe_sni(host=host.encode(), port=port, name=domain.encode(),
                                      alpn_protocols=[self.ACME_TLS_1_PROTOCOL])
 
-    def verify_cert(self, domain: str, cert: Union[x509.Certificate, crypto.X509]) -> bool:
+    def verify_cert(self, domain: str, cert: x509.Certificate, ) -> bool:
         """Verify tls-alpn-01 challenge certificate.
 
         :param str domain: Domain name being validated.
         :param cert: Challenge certificate.
-        :type cert: `cryptography.x509.Certificate` or `OpenSSL.crypto.X509`
+        :type cert: `cryptography.x509.Certificate`
 
         :returns: Whether the certificate was successfully verified.
         :rtype: bool
 
         """
-        if not isinstance(cert, x509.Certificate):
-            cert = cert.to_cryptography()
-
         names = crypto_util.get_names_from_subject_and_extensions(
             cert.subject, cert.extensions
         )
@@ -506,7 +503,7 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
 
     # pylint: disable=too-many-arguments
     def simple_verify(self, chall: 'TLSALPN01', domain: str, account_public_key: jose.JWK,
-                      cert: Optional[crypto.X509] = None, host: Optional[str] = None,
+                      cert: Optional[x509.Certificate] = None, host: Optional[str] = None,
                       port: Optional[int] = None) -> bool:
         """Simple verify.
 
@@ -516,7 +513,7 @@ class TLSALPN01Response(KeyAuthorizationChallengeResponse):
         :param .challenges.TLSALPN01 chall: Corresponding challenge.
         :param str domain: Domain name being validated.
         :param JWK account_public_key:
-        :param OpenSSL.crypto.X509 cert: Optional certificate. If not
+        :param x509.Certificate cert: Optional certificate. If not
             provided (``None``) certificate will be retrieved using
             `probe_cert`.
         :param string host: IP address used to probe the certificate.
@@ -547,7 +544,7 @@ class TLSALPN01(KeyAuthorizationChallenge):
     response_cls = TLSALPN01Response
     typ = response_cls.typ
 
-    def validation(self, account_key: jose.JWK, **kwargs: Any) -> Tuple[crypto.X509, crypto.PKey]:
+    def validation(self, account_key: jose.JWK, **kwargs: Any) -> Tuple[x509.Certificate, crypto.PKey]:
         """Generate validation.
 
         :param JWK account_key:
@@ -556,7 +553,7 @@ class TLSALPN01(KeyAuthorizationChallenge):
             in certificate generation. If not provided (``None``), then
             fresh key will be generated.
 
-        :rtype: `tuple` of `OpenSSL.crypto.X509` and `OpenSSL.crypto.PKey`
+        :rtype: `tuple` of `x509.Certificate` and `OpenSSL.crypto.PKey`
 
         """
         # TODO: Remove cast when response() is generic.
