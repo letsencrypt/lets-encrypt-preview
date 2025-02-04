@@ -126,7 +126,7 @@ class RenewalTest(test_util.ConfigTestCase):
         assert self.config.key_type == 'ecdsa'
         assert self.config.reuse_key
         # None is passed as the existing key, i.e. the key is not actually being reused.
-        le_client.obtain_certificate.assert_called_with(mock.ANY, None)
+        le_client.obtain_certificate.assert_called_with(mock.ANY, None, ari_hint=mock.ANY)
 
     @mock.patch('certbot._internal.renewal.hooks.renew_hook')
     @mock.patch.object(configuration.NamespaceConfig, 'set_by_user')

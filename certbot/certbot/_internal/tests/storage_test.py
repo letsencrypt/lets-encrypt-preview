@@ -776,6 +776,12 @@ class RenewableCertTests(BaseRenewableCertTest):
             base_time, interval = parameters
             assert storage.add_time_interval(base_time, interval) == \
                              excepted
+    
+    def test_parse_js_time(self):
+        ts = "2024-07-04T19:56:35Z"
+        from certbot._internal import storage
+        t = storage.parse_js_time(ts)
+        assert t == datetime.datetime(2024, 7, 4, 19, 56, 35, tzinfo=datetime.timezone.utc)
 
     def test_server(self):
         self.test_rc.configuration["renewalparams"] = {}

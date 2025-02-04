@@ -434,6 +434,12 @@ class NotAfterTest(unittest.TestCase):
         from certbot.crypto_util import notAfter
         assert notAfter(CERT_PATH).isoformat() == \
                          '2014-12-18T22:34:45+00:00'
+        
+class GetAriSuffixTest(unittest.TestCase):
+    def test_getAriSuffix(self):
+        from certbot.crypto_util import ariCertIdent
+        assert ariCertIdent(SS_CERT_PATH) == \
+        'nSfvjNtwFty5BQ-yyobB-4C-v9o.AIYLtIQHBBG0'
 
 
 class Sha256sumTest(unittest.TestCase):

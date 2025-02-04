@@ -8,6 +8,7 @@ import datetime
 import hashlib
 import logging
 import re
+
 from typing import List
 from typing import Optional
 from typing import Set
@@ -524,6 +525,17 @@ def notAfter(cert_path: str) -> datetime.datetime:
         cert = x509.load_pem_x509_certificate(f.read())
     return cert.not_valid_after_utc
 
+def ariCertIdent(cert_path: str) -> str:
+    """Make draft-ietf-acme-ari identifier of a certificate
+    :param str cert_path: path to a cert in PEM format
+
+    :returns: unique identifier of the cert at cert_path to be used for ari related uses
+    :rtype: str
+    """
+    with open(cert_path, "rb") as f:
+        #cert = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+        cert = x509.load_pem_x509_certificate(f.read())
+    return acme_crypto_util.ariCertIdent(cert)
 
 def sha256sum(filename: str) -> str:
     """Compute a sha256sum of a file.

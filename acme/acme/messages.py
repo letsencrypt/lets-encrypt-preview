@@ -27,6 +27,8 @@ ERROR_CODES = {
     'accountDoesNotExist': 'The request specified an account that does not exist',
     'alreadyRevoked': 'The request specified a certificate to be revoked that has' \
     ' already been revoked',
+    'alreadyReplaced': 'The request specified a predecessor certificate which has' \
+    ' already been marked as replaced',
     'badCSR': 'The CSR is unacceptable (e.g., due to a short key)',
     'badNonce': 'The client sent an unacceptable anti-replay nonce',
     'badPublicKey': 'The JWS was signed by a public key the server does not support',
@@ -678,4 +680,8 @@ class OrderResource(ResourceWithURI):
 
 
 class NewOrder(Order):
-    """New order."""
+    """New order.
+    :ivar: replaces: draft-ietf-acme-ari certificate identifier string
+    :vartype: str
+    """
+    replaces: str = jose.field("replaces", omitempty= True)

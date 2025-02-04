@@ -9,6 +9,7 @@ import sys
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography import x509
 import josepy as jose
 from josepy.util import ComparableECKey
 from OpenSSL import crypto
@@ -36,6 +37,11 @@ def load_cert(*names):
         names[-1], crypto.FILETYPE_PEM, crypto.FILETYPE_ASN1)
     return crypto.load_certificate(loader, load_vector(*names))
 
+def load_cert_cryptograpy(*names):
+    """Load certificate as cryptograpy format"""
+    loader = _guess_loader(
+        names[-1], x509.load_pem_x509_certificate, x509.load_der_x509_certificate)
+    return loader(load_vector(*names))
 
 def load_comparable_cert(*names):
     """Load ComparableX509 cert."""

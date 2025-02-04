@@ -313,7 +313,8 @@ def should_renew(config: configuration.NamespaceConfig, lineage: storage.Renewab
     if config.renew_by_default:
         logger.debug("Auto-renewal forced with --force-renewal...")
         return True
-    if lineage.should_autorenew():
+    if lineage.should_autorenew(not config.no_verify_ssl,
+                                useragent= client.determine_user_agent(config)):
         logger.info("Certificate is due for renewal, auto-renewing...")
         return True
     if config.dry_run:
@@ -396,7 +397,8 @@ def renew_cert(config: configuration.NamespaceConfig, domains: Optional[List[str
         _update_renewal_params_from_key(new_key, config)
     else:
         new_key = None
-    new_cert, new_chain, new_key, _ = le_client.obtain_certificate(domains, new_key)
+    ari = crypto_util.ariCertIdent(lineage.cert_path)
+    new_cert, new_chain, new_key, _ = le_client.obtain_certificate(domains, new_key, ari_hint = ari)
     if config.dry_run:
         logger.debug("Dry run: skipping updating lineage at %s", os.path.dirname(lineage.cert))
     else:

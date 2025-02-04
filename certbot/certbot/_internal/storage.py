@@ -6,6 +6,8 @@ import logging
 import re
 import shutil
 import stat
+from random import random
+import requests
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -118,6 +120,14 @@ def add_time_interval(base_time: datetime.datetime, interval: str,
     tzinfo = base_time.tzinfo or pytz.UTC
 
     return textparser.parseDT(interval, base_time, tzinfo=tzinfo)[0]
+
+def parse_js_time(instr: str) -> datetime.datetime:
+    """parse JS Z ended UTC isoformat timestring because 
+    fromisoformat can't parse it until 3.11"""
+    try:
+        return datetime.datetime.fromisoformat(instr)
+    except ValueError:
+        return datetime.datetime.fromisoformat(instr.replace('Z',"+00:00"))
 
 
 def write_renewal_config(o_filename: str, n_filename: str, archive_dir: str,
@@ -965,6 +975,44 @@ class RenewableCert(interfaces.RenewableCert):
             logger.debug(str(e))
             return False
 
+    def get_renewalinfo(self, version:int, verify_ssl: bool, ua:str) -> Tuple[
+        bool, datetime.datetime, datetime.datetime]:
+        """from server in config try to get renewalinfo of certificate
+        if it sees error it will return datetime 1-01-01
+
+        :returns: tuple of [hasari, startdatetime, enddatetime]
+        :rtype: tuple[bool, datetime.datetime, datetime.datetime]
+        """
+        #if it's unittest it doesn't have any server
+        try:
+            serverurl = self.configuration["renewalparams"]["server"]
+        except KeyError:
+            serverurl = None
+
+        if serverurl is None:
+            return False, datetime.datetime(1,1,1), datetime.datetime(1,1,1)
+        try:
+            suffix = crypto_util.ariCertIdent(self.version('cert', version))
+            session = requests.session()
+            session.verify = verify_ssl
+            session.headers.update({'User-Agent': f'{ua}'})
+            r = session.get(serverurl, timeout = 1)
+            endpoint = r.json()["renewalInfo"]
+            r = session.get(f"{endpoint}/{suffix}", timeout = 1)
+            suggestedWindow = r.json()["suggestedWindow"]
+            start = parse_js_time(suggestedWindow['start'])
+            end = parse_js_time(suggestedWindow['end'])
+            logger.debug("Accquired renewalinfo for %s: window starts at %s",
+                         self.lineagename, start.date())
+            reason = getattr(r.json(), "explanationURL", None)
+            if reason is not None:
+                logger.info("renewalwindow adjusted because of: %s", reason)
+            return True, start, end
+        except (KeyError, requests.exceptions.RequestException) as e:
+            logger.debug("%s",e)
+            return False, datetime.datetime(1,1,1), datetime.datetime(1,1,1)
+
+
     def autorenewal_is_enabled(self) -> bool:
         """Is automatic renewal enabled for this cert?
 
@@ -977,7 +1025,7 @@ class RenewableCert(interfaces.RenewableCert):
         return ("autorenew" not in self.configuration["renewalparams"] or
                 self.configuration["renewalparams"].as_bool("autorenew"))
 
-    def should_autorenew(self) -> bool:
+    def should_autorenew(self, verify_ssl: bool = False, useragent: str = 'certbot-ari') -> bool:
         """Should we now try to autorenew the most recent cert version?
 
         This is a policy question and does not only depend on whether
@@ -1001,17 +1049,34 @@ class RenewableCert(interfaces.RenewableCert):
                 logger.debug("Should renew, certificate is revoked.")
                 return True
 
-            # Renews some period before expiry time
-            default_interval = constants.RENEWER_DEFAULTS["renew_before_expiry"]
-            interval = self.configuration.get("renew_before_expiry", default_interval)
             expiry = crypto_util.notAfter(self.version(
                 "cert", self.latest_common_version()))
             now = datetime.datetime.now(pytz.UTC)
+
+            # Try draft-ietf-acme-ari endpoint if server has it
+            hasari, start, end = self.get_renewalinfo(self.latest_common_version(),
+                                                       verify_ssl, useragent)
+            if hasari:
+                # Server have ari endpoint
+                rtime = start + random()*(end-start)
+                # If random time is before next wakeup we'll do renewal this time
+                if rtime < now + datetime.timedelta(hours=12):
+                    logger.debug("Should renew, inside ARI renwal window")
+                    return True
+            else:
+                # Renewal info for this cert not exsit or not supported version
+                # server not support ari or asking on wrong server
+                logger.debug("ARI infomation is not avabliable for this cert")
+            # Renews some period before expiry time
+            default_interval = constants.RENEWER_DEFAULTS["renew_before_expiry"]
+            interval = self.configuration.get("renew_before_expiry", default_interval)
             if expiry < add_time_interval(now, interval):
                 logger.debug("Should renew, less than %s before certificate "
-                             "expiry %s.", interval,
-                             expiry.strftime("%Y-%m-%d %H:%M:%S %Z"))
+                            "expiry %s.", interval,
+                            expiry.strftime("%Y-%m-%d %H:%M:%S %Z"))
                 return True
+
+
         return False
 
     @classmethod
