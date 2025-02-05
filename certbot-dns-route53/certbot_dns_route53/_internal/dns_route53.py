@@ -14,6 +14,7 @@ from typing import cast
 import boto3
 from botocore.exceptions import ClientError
 from botocore.exceptions import NoCredentialsError
+from botocore.credentials import SharedCredentialProvider
 
 from acme import challenges
 from certbot import achallenges
@@ -21,6 +22,7 @@ from certbot import errors
 from certbot import interfaces
 from certbot.achallenges import AnnotatedChallenge
 from certbot.plugins import common
+from certbot.plugins import dns_common
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,18 @@ class Authenticator(common.Plugin, interfaces.Authenticator):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.r53 = boto3.client("route53")
+
+        if self.conf('credentials_file') and isinstance(self.conf('credentials_file'), str):
+            dns_common.validate_file_permissions(self.conf('credentials'))
+
+            creds = SharedCredentialProvider(self.conf("credentials")).load()
+
+            if creds is None:
+                raise errors.PluginError("Couldn't load AWS credentials")
+            self.r53 = boto3.client("route53",
+                aws_access_key_id=creds.access_key, aws_secret_access_key=creds.secret_key)
+        else:
+            self.r53 = boto3.client("route53")
         self._attempt_cleanup = False
         self._resource_records: DefaultDict[str, List[Dict[str, str]]] = \
             collections.defaultdict(list)
@@ -53,8 +66,7 @@ class Authenticator(common.Plugin, interfaces.Authenticator):
 
     @classmethod
     def add_parser_arguments(cls, add: Callable[..., None]) -> None:
-        # This authenticator currently adds no extra arguments.
-        pass
+        add('credentials_file', help='Load AWS credentials from specified file.', default=None)
 
     def auth_hint(self, failed_achalls: List[achallenges.AnnotatedChallenge]) -> str:
         return (
